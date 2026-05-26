@@ -1,1 +1,1521 @@
-<!-- capture test 3 -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitMind.ai — منصة الصحة الذكية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<!-- ══ Firebase SDK ══ -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<style>
+  /* ═══════════════════════════════════════════
+     TOKENS
+  ═══════════════════════════════════════════ */
+  :root {
+    --g-dark:   #0B1F18;
+    --g-mid:    #0F6E56;
+    --g-base:   #1D9E75;
+    --g-light:  #5DCAA5;
+    --g-pale:   #E1F5EE;
+    --g-mint:   #9FE1CB;
+    --white:    #FFFFFF;
+    --off:      #F7FBFA;
+    --card:     #FFFFFF;
+    --border:   rgba(29,158,117,0.18);
+    --muted:    #6B8A80;
+    --text:     #0D1F1A;
+    --blue:     #378ADD;
+    --amber:    #BA7517;
+    --coral:    #D85A30;
+    --pink:     #D4537E;
+    --red-bg:   #FCEBEB;
+    --red-txt:  #A32D2D;
+    --sidebar-w: 240px;
+    --nav-h:    64px;
+    --radius:   14px;
+    --shadow:   0 2px 20px rgba(15,110,86,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Tajawal', 'Outfit', sans-serif;
+    background: var(--off);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--g-mint); border-radius: 99px; }
+
+  h1 { font-size: clamp(22px, 3vw, 30px); font-weight: 700; }
+  h2 { font-size: clamp(18px, 2.5vw, 22px); font-weight: 600; }
+  h3 { font-size: 16px; font-weight: 600; }
+  p, span, label { font-weight: 400; line-height: 1.6; }
+
+  /* ── LAYOUT ──────────────────────────────── */
+  .app-shell { display: flex; min-height: 100vh; }
+
+  /* ── SIDEBAR ──────────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--g-dark);
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; right: 0;
+    height: 100vh; z-index: 200;
+    transition: transform .3s ease;
+    overflow-y: auto;
+  }
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 10px;
+    padding: 22px 20px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .logo-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--g-base);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text { font-size: 18px; font-weight: 700; color: var(--white); }
+  .logo-sub  { font-size: 10px; color: var(--g-mint); margin-top: 1px; }
+
+  .nav-section { padding: 14px 12px 6px; }
+  .nav-label { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 1.2px; padding: 0 8px 8px; text-transform: uppercase; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 12px; border-radius: 10px;
+    margin-bottom: 3px; cursor: pointer;
+    color: rgba(255,255,255,0.55); font-size: 14px;
+    transition: all .2s; text-decoration: none;
+    border: none; background: none; width: 100%; text-align: right;
+  }
+  .nav-item i { width: 18px; text-align: center; font-size: 15px; flex-shrink: 0; }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: var(--white); }
+  .nav-item.active {
+    background: var(--g-mid); color: var(--white); font-weight: 600;
+    box-shadow: 0 4px 14px rgba(29,158,117,0.35);
+  }
+  .nav-badge {
+    margin-right: auto; background: var(--g-base); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 1px 7px;
+    border-radius: 99px; min-width: 20px; text-align: center;
+  }
+
+  .sidebar-footer {
+    margin-top: auto; padding: 16px 12px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .user-pill {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    background: rgba(255,255,255,0.05); cursor: pointer;
+    transition: background .2s;
+  }
+  .user-pill:hover { background: rgba(255,255,255,0.1); }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--g-mid);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .user-name  { font-size: 13px; font-weight: 600; color: var(--white); }
+  .user-email { font-size: 10px; color: var(--muted); }
+  .logout-btn { margin-right: auto; color: var(--muted); font-size: 13px; background: none; border: none; cursor: pointer; }
+  .logout-btn:hover { color: var(--coral); }
+
+  /* ── MAIN ──────────────────────────────────── */
+  .main { margin-right: var(--sidebar-w); flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+  .topbar {
+    height: var(--nav-h); background: var(--white);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 28px; gap: 16px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-title { font-size: 17px; font-weight: 600; flex: 1; }
+  .topbar-sub { font-size: 12px; color: var(--muted); }
+  .topbar-actions { display: flex; gap: 8px; align-items: center; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--off); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 15px; color: var(--muted); transition: all .2s;
+  }
+  .icon-btn:hover { background: var(--g-pale); color: var(--g-mid); border-color: var(--g-mint); }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--g-base); color: #fff; border: none;
+    padding: 8px 18px; border-radius: 10px; font-size: 13px;
+    font-weight: 600; cursor: pointer; font-family: inherit; transition: all .2s;
+  }
+  .btn-primary:hover { background: var(--g-mid); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(29,158,117,0.3); }
+  .btn-primary:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: none; color: var(--text); border: 1px solid var(--border);
+    padding: 8px 16px; border-radius: 10px; font-size: 13px;
+    cursor: pointer; font-family: inherit; transition: all .2s;
+  }
+  .btn-ghost:hover { background: var(--off); }
+
+  .page-wrap { padding: 28px; max-width: 1200px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── COMPONENTS ─────────────────────────────── */
+  .card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .card-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 0; }
+  .card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
+  .card-title i { font-size: 15px; color: var(--g-base); }
+  .card-body { padding: 16px 20px 20px; }
+
+  .metrics-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 20px; }
+  .metric-card {
+    background: var(--card); border-radius: var(--radius);
+    border: 1px solid var(--border); padding: 18px 20px;
+    position: relative; overflow: hidden;
+  }
+  .metric-card::before {
+    content: ''; position: absolute;
+    top: 0; right: 0; width: 4px; height: 100%;
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .metric-card.green::before { background: var(--g-base); }
+  .metric-card.blue::before  { background: var(--blue); }
+  .metric-card.amber::before { background: var(--amber); }
+  .metric-card.coral::before { background: var(--coral); }
+  .metric-lbl { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .metric-val { font-size: 26px; font-weight: 700; line-height: 1; }
+  .metric-change { font-size: 12px; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+  .up   { color: var(--g-base); }
+  .down { color: var(--coral); }
+  .warn { color: var(--amber); }
+
+  .prog-row { margin-bottom: 14px; }
+  .prog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .prog-top span:first-child { font-size: 13px; }
+  .prog-top span:last-child  { font-size: 12px; color: var(--muted); }
+  .prog-bar { height: 7px; background: var(--off); border-radius: 99px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 99px; transition: width .6s ease; }
+
+  .two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px;
+  }
+  .badge-green  { background: var(--g-pale);  color: var(--g-mid); }
+  .badge-blue   { background: #E6F1FB;         color: #185FA5; }
+  .badge-amber  { background: #FAEEDA;         color: #854F0B; }
+  .badge-coral  { background: #FAECE7;         color: #993C1D; }
+  .badge-pink   { background: #FBEAF0;         color: #993556; }
+  .badge-red    { background: var(--red-bg);   color: var(--red-txt); }
+
+  .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+  .ic-circle {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+
+  /* ── LOGIN ──────────────────────────────────── */
+  #page-login {
+    min-height: 100vh; display: flex; align-items: center;
+    justify-content: center; background: var(--g-dark);
+    position: fixed; inset: 0; z-index: 999;
+  }
+  #page-login .bg-circles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  #page-login .bg-circles span { position: absolute; border-radius: 50%; background: rgba(29,158,117,0.08); }
+  .login-box {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px; padding: 40px;
+    width: min(440px, 92vw);
+    backdrop-filter: blur(20px);
+    position: relative; z-index: 1;
+  }
+  .login-brand { text-align: center; margin-bottom: 28px; }
+  .login-brand .logo-ring {
+    width: 64px; height: 64px; border-radius: 18px;
+    background: var(--g-base); margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; box-shadow: 0 8px 28px rgba(29,158,117,0.4);
+  }
+  .login-brand h2 { color: #fff; font-size: 22px; }
+  .login-brand p  { color: var(--g-mint); font-size: 13px; margin-top: 4px; }
+
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 6px; display: block; }
+  .form-input {
+    width: 100%; padding: 11px 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; color: #fff; font-size: 14px;
+    font-family: inherit; transition: border .2s; outline: none;
+  }
+  .form-input::placeholder { color: rgba(255,255,255,0.25); }
+  .form-input:focus { border-color: var(--g-base); box-shadow: 0 0 0 3px rgba(29,158,117,0.2); }
+  .input-wrap { position: relative; }
+  .input-wrap .toggle-eye {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: rgba(255,255,255,0.3);
+    cursor: pointer; font-size: 15px; padding: 0;
+  }
+  .input-wrap .toggle-eye:hover { color: var(--g-mint); }
+
+  .btn-login {
+    width: 100%; padding: 12px;
+    background: var(--g-base); color: #fff;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: inherit; margin-top: 4px;
+    transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-login:hover { background: var(--g-mid); box-shadow: 0 6px 20px rgba(29,158,117,0.4); }
+  .btn-login:disabled { opacity:.6; cursor:not-allowed; }
+
+  .auth-error {
+    background: var(--red-bg); color: var(--red-txt);
+    border: 1px solid #F5C0C0; border-radius: 10px;
+    padding: 10px 14px; font-size: 13px; margin-bottom: 14px;
+    display: none;
+  }
+
+  .or-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; }
+  .or-divider span { font-size: 12px; color: rgba(255,255,255,0.25); white-space: nowrap; }
+  .or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
+
+  .face-id-btn {
+    width: 100%; padding: 12px; border-radius: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.75); font-size: 14px;
+    cursor: pointer; font-family: inherit; transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .face-id-btn:hover { background: rgba(29,158,117,0.15); border-color: var(--g-mint); color: var(--g-mint); }
+
+  .scan-anim {
+    width: 90px; height: 90px; border-radius: 50%;
+    border: 3px solid var(--g-base); margin: 0 auto 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px; position: relative; display: none;
+  }
+  .scan-anim.scanning { display: flex; animation: scanPulse 1s ease infinite; }
+  @keyframes scanPulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(29,158,117,0.4); }
+    50%      { box-shadow: 0 0 0 16px rgba(29,158,117,0); }
+  }
+  .scan-progress { height: 4px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; margin-top: 12px; }
+  .scan-fill { height: 100%; width: 0; background: var(--g-base); border-radius: 99px; transition: width .08s; }
+
+  .register-link { text-align: center; margin-top: 18px; font-size: 13px; color: rgba(255,255,255,0.4); }
+  .register-link a { color: var(--g-mint); text-decoration: none; font-weight: 600; }
+  .register-link a:hover { text-decoration: underline; }
+
+  /* ── REGISTER ───────────────────────────────── */
+  #page-register {
+    min-height: 100vh; display: flex; align-items: center;
+    justify-content: center; background: var(--g-dark);
+    position: fixed; inset: 0; z-index: 998;
+  }
+  .register-box {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px; padding: 36px 40px;
+    width: min(560px, 94vw); backdrop-filter: blur(20px);
+    max-height: 92vh; overflow-y: auto;
+  }
+  .register-box h2 { color: #fff; margin-bottom: 4px; font-size: 20px; }
+  .register-box .sub { color: var(--g-mint); font-size: 13px; margin-bottom: 22px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .goal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+  .goal-opt {
+    padding: 10px 14px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.6); font-size: 13px;
+    cursor: pointer; transition: all .2s; text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-family: inherit;
+  }
+  .goal-opt:hover, .goal-opt.active {
+    background: rgba(29,158,117,0.18); border-color: var(--g-base); color: var(--g-mint);
+  }
+  select.form-input option { background: var(--g-dark); color: #fff; }
+
+  /* ── DASHBOARD ──────────────────────────────── */
+  .greeting h1 { font-size: 22px; margin-bottom: 2px; }
+  .greeting p  { font-size: 13px; color: var(--muted); }
+
+  .activity-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-text { font-size: 13px; }
+  .activity-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 100px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .bar-fill { width: 100%; border-radius: 4px 4px 0 0; cursor: pointer; transition: opacity .2s; min-width: 18px; }
+  .bar-fill:hover { opacity: .75; }
+  .bar-lbl { font-size: 10px; color: var(--muted); }
+
+  /* ── FOOD ───────────────────────────────────── */
+  .upload-zone {
+    border: 2px dashed var(--g-mint); border-radius: var(--radius);
+    padding: 40px 24px; text-align: center; cursor: pointer;
+    background: var(--g-pale); transition: all .2s;
+  }
+  .upload-zone:hover { background: #c8eee3; border-color: var(--g-base); }
+  .upload-zone i   { font-size: 42px; color: var(--g-mid); margin-bottom: 10px; }
+  .upload-zone h3  { font-size: 15px; margin-bottom: 4px; }
+  .upload-zone p   { font-size: 12px; color: var(--muted); }
+  #food-preview {
+    display: none; width: 100%; max-height: 200px;
+    object-fit: cover; border-radius: var(--radius); border: 1px solid var(--border);
+  }
+
+  .nutrient-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .nutrient-row:last-child { border-bottom: none; }
+
+  .meal-card {
+    background: var(--off); border-radius: 10px;
+    padding: 12px; text-align: center; cursor: pointer;
+    border: 1px solid var(--border); transition: all .2s;
+  }
+  .meal-card:hover { background: var(--g-pale); border-color: var(--g-mint); }
+  .meal-emoji { font-size: 28px; margin-bottom: 6px; }
+  .meal-name  { font-size: 12px; font-weight: 600; }
+  .meal-cal   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── METRICS ────────────────────────────────── */
+  .bmi-ring-wrap { text-align: center; padding: 20px 0 14px; }
+  .bmi-ring {
+    width: 120px; height: 120px; border-radius: 50%;
+    border: 8px solid var(--g-base); background: var(--g-pale);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    margin: 0 auto 14px;
+  }
+  .bmi-val { font-size: 30px; font-weight: 700; color: var(--g-mid); }
+  .bmi-sub { font-size: 11px; color: var(--muted); }
+  .bmi-cat {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 600;
+    background: #FAEEDA; color: #854F0B; border: 1px solid #BA7517;
+  }
+  .meas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .meas-item {
+    background: var(--off); border-radius: 10px;
+    padding: 12px; text-align: center; border: 1px solid var(--border);
+  }
+  .meas-val  { font-size: 20px; font-weight: 700; }
+  .meas-unit { font-size: 10px; color: var(--muted); }
+  .meas-name { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  /* ── EXERCISE ───────────────────────────────── */
+  .ex-card {
+    background: var(--off); border-radius: var(--radius);
+    padding: 16px; cursor: pointer; border: 1px solid var(--border);
+    transition: all .2s; text-align: center;
+  }
+  .ex-card:hover { background: var(--g-pale); border-color: var(--g-mint); transform: translateY(-2px); }
+  .ex-card i { font-size: 26px; color: var(--g-base); margin-bottom: 8px; }
+  .ex-name { font-size: 13px; font-weight: 600; }
+  .ex-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  .week-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 8px; }
+  .day-card { border-radius: 10px; padding: 10px 6px; text-align: center; border: 1px solid var(--border); background: var(--off); }
+  .day-card.today { background: var(--g-pale); border-color: var(--g-base); }
+  .day-name { font-size: 10px; color: var(--muted); margin-bottom: 6px; }
+  .day-name.today { color: var(--g-mid); font-weight: 700; }
+  .day-icon { font-size: 18px; margin-bottom: 4px; }
+  .day-ex   { font-size: 11px; font-weight: 600; }
+
+  /* ── INJURY ─────────────────────────────────── */
+  .injury-card {
+    display: flex; gap: 14px; align-items: flex-start;
+    background: var(--card); border-radius: var(--radius);
+    border: 1px solid var(--border); padding: 18px;
+    margin-bottom: 12px; box-shadow: var(--shadow); border-right: 4px solid;
+  }
+  .injury-card.active-inj   { border-right-color: var(--coral); }
+  .injury-card.recovery-inj { border-right-color: var(--amber); }
+  .injury-title { font-size: 15px; font-weight: 600; }
+  .injury-desc  { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+  .tip-card { border-radius: 12px; padding: 14px; text-align: center; }
+  .tip-card i  { font-size: 22px; margin-bottom: 6px; }
+  .tip-card h4 { font-size: 13px; font-weight: 600; }
+  .tip-card p  { font-size: 11px; margin-top: 4px; }
+
+  /* ── REPORTS ────────────────────────────────── */
+  .tabs-row { display: flex; gap: 4px; background: var(--off); padding: 4px; border-radius: 10px; width: fit-content; margin-bottom: 20px; border: 1px solid var(--border); }
+  .tab-btn {
+    padding: 7px 22px; border-radius: 8px; font-size: 13px;
+    cursor: pointer; border: none; background: none; font-family: inherit;
+    color: var(--muted); transition: all .2s;
+  }
+  .tab-btn.active { background: var(--white); color: var(--text); font-weight: 600; box-shadow: 0 1px 6px rgba(0,0,0,0.08); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .ai-insight {
+    background: linear-gradient(135deg, var(--g-pale), #c8f0e4);
+    border-radius: var(--radius); padding: 18px 20px;
+    border: 1px solid var(--g-mint);
+    display: flex; gap: 14px; align-items: flex-start; margin-top: 16px;
+  }
+  .ai-insight i  { font-size: 22px; color: var(--g-mid); flex-shrink: 0; margin-top: 2px; }
+  .ai-insight h4 { font-size: 14px; font-weight: 700; color: var(--g-dark); margin-bottom: 4px; }
+  .ai-insight p  { font-size: 13px; color: var(--g-mid); line-height: 1.6; }
+
+  /* ── MEAL LOG (saved meals) ─────────────────── */
+  .saved-meal-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .saved-meal-row:last-child { border-bottom: none; }
+  .saved-meal-name { font-weight: 600; }
+  .saved-meal-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── TOAST ──────────────────────────────────── */
+  .toast {
+    position: fixed; bottom: 24px; left: 24px;
+    background: var(--g-dark); color: #fff;
+    padding: 12px 20px; border-radius: 12px;
+    font-size: 13px; display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    transform: translateY(80px); opacity: 0;
+    transition: all .3s ease; z-index: 9999;
+    border: 1px solid rgba(29,158,117,0.3);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast i { color: var(--g-light); }
+
+  /* ── LOADING OVERLAY ────────────────────────── */
+  #loading-screen {
+    position: fixed; inset: 0; background: var(--g-dark);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; flex-direction: column; gap: 16px;
+  }
+  .spinner {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 4px solid rgba(29,158,117,0.2);
+    border-top-color: var(--g-base);
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── RESPONSIVE ─────────────────────────────── */
+  @media (max-width: 768px) {
+    :root { --sidebar-w: 0px; }
+    .sidebar { transform: translateX(100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-right: 0; }
+    .metrics-grid { grid-template-columns: 1fr 1fr; }
+    .two-col, .three-col { grid-template-columns: 1fr; }
+    .week-grid { grid-template-columns: repeat(4,1fr); }
+    .topbar { padding: 0 16px; }
+    .page-wrap { padding: 16px; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ LOADING SCREEN ══ -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <p style="color:var(--g-mint);font-size:14px;">جاري التحميل... / Loading</p>
+</div>
+
+<!-- ══ LOGIN PAGE ══ -->
+<div id="page-login" style="display:none;">
+  <div class="bg-circles">
+    <span style="width:500px;height:500px;top:-120px;right:-100px;"></span>
+    <span style="width:300px;height:300px;bottom:-60px;left:-60px;"></span>
+    <span style="width:180px;height:180px;bottom:100px;right:30%;"></span>
+  </div>
+  <div class="login-box">
+    <div class="login-brand">
+      <div class="logo-ring">🧠</div>
+      <h2>FitMind.ai</h2>
+      <p>منصة الصحة واللياقة الذكية · Smart Health Platform</p>
+    </div>
+
+    <div id="login-form-wrap">
+      <div class="auth-error" id="login-error"></div>
+      <div class="form-group">
+        <label class="form-label">البريد الإلكتروني / Email</label>
+        <input class="form-input" type="email" placeholder="example@email.com" id="login-email" dir="ltr">
+      </div>
+      <div class="form-group">
+        <label class="form-label">كلمة المرور / Password</label>
+        <div class="input-wrap">
+          <input class="form-input" type="password" placeholder="••••••••" id="login-pwd" dir="ltr" style="padding-left:40px;" onkeydown="if(event.key==='Enter')doLogin()">
+          <button class="toggle-eye" onclick="togglePwd('login-pwd','eye-icon')" type="button"><i class="fa fa-eye" id="eye-icon"></i></button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:rgba(255,255,255,0.5);cursor:pointer;">
+          <input type="checkbox" style="accent-color:var(--g-base);"> تذكرني / Remember me
+        </label>
+        <a href="#" style="font-size:12px;color:var(--g-mint);text-decoration:none;">نسيت كلمة المرور؟</a>
+      </div>
+      <button class="btn-login" id="btn-login-submit" onclick="doLogin()">
+        <i class="fa fa-right-to-bracket"></i> تسجيل الدخول / Sign In
+      </button>
+      <div class="or-divider"><span>أو / or</span></div>
+      <button class="face-id-btn" onclick="startFaceScan()">
+        <i class="fa fa-face-smile" style="font-size:18px;"></i>
+        تسجيل الدخول ببصمة الوجه · Face ID Login
+      </button>
+    </div>
+
+    <div id="face-scan-wrap" style="display:none;text-align:center;">
+      <div class="scan-anim scanning" id="scan-anim">🫣</div>
+      <p style="color:rgba(255,255,255,0.7);font-size:14px;margin-bottom:6px;">جاري المسح... / Scanning...</p>
+      <p style="font-size:12px;color:rgba(255,255,255,0.3);">انظر مباشرة إلى الكاميرا · Look at the camera</p>
+      <div class="scan-progress"><div class="scan-fill" id="scan-fill"></div></div>
+      <button onclick="cancelScan()" style="margin-top:14px;font-size:13px;color:rgba(255,255,255,0.4);background:none;border:none;cursor:pointer;">إلغاء / Cancel</button>
+    </div>
+
+    <p class="register-link">ليس لديك حساب؟ <a href="#" onclick="showRegister()">سجّل الآن / Sign Up</a></p>
+  </div>
+</div>
+
+<!-- ══ REGISTER PAGE ══ -->
+<div id="page-register" style="display:none;">
+  <div class="register-box">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+      <div style="width:42px;height:42px;border-radius:12px;background:var(--g-base);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 16px rgba(29,158,117,0.35);">🧠</div>
+      <div>
+        <h2>إنشاء حسابك / Create Account</h2>
+        <p class="sub">خصّص خطتك الغذائية والرياضية · Personalize your plan</p>
+      </div>
+    </div>
+
+    <div class="auth-error" id="register-error"></div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">الاسم / Full Name</label>
+        <input class="form-input" type="text" id="reg-name" placeholder="محمد أحمد / Mohammed Ahmed">
+      </div>
+      <div class="form-group">
+        <label class="form-label">البريد / Email</label>
+        <input class="form-input" type="email" id="reg-email" placeholder="example@email.com" dir="ltr">
+      </div>
+      <div class="form-group">
+        <label class="form-label">كلمة المرور / Password</label>
+        <div class="input-wrap">
+          <input class="form-input" type="password" id="reg-pwd" placeholder="••••••••" dir="ltr" style="padding-left:40px;">
+          <button class="toggle-eye" onclick="togglePwd('reg-pwd','eye-icon-reg')" type="button"><i class="fa fa-eye" id="eye-icon-reg"></i></button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">العمر / Age</label>
+        <input class="form-input" type="number" id="reg-age" placeholder="25">
+      </div>
+      <div class="form-group">
+        <label class="form-label">الوزن / Weight (kg)</label>
+        <input class="form-input" type="number" id="reg-weight" placeholder="75">
+      </div>
+      <div class="form-group">
+        <label class="form-label">الطول / Height (cm)</label>
+        <input class="form-input" type="number" id="reg-height" placeholder="175">
+      </div>
+      <div class="form-group">
+        <label class="form-label">الجنس / Gender</label>
+        <select class="form-input" id="reg-gender">
+          <option value="male">ذكر / Male</option>
+          <option value="female">أنثى / Female</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-top:14px;">
+      <label class="form-label" style="color:rgba(255,255,255,0.6);">هدفك الرئيسي / Primary Goal</label>
+      <div class="goal-grid">
+        <button class="goal-opt active" onclick="selectGoal(this)" data-goal="lose">📉 فقدان الوزن / Lose Weight</button>
+        <button class="goal-opt" onclick="selectGoal(this)" data-goal="gain">📈 زيادة الوزن / Gain Weight</button>
+        <button class="goal-opt" onclick="selectGoal(this)" data-goal="muscle">💪 بناء العضلات / Build Muscle</button>
+        <button class="goal-opt" onclick="selectGoal(this)" data-goal="health">❤️ الصحة العامة / General Health</button>
+      </div>
+    </div>
+
+    <button class="btn-login" style="margin-top:20px;" id="btn-register-submit" onclick="finishRegister()">
+      <i class="fa fa-check"></i> إنشاء الحساب / Create Account
+    </button>
+    <p class="register-link">لديك حساب؟ <a href="#" onclick="showLogin()">تسجيل الدخول / Sign In</a></p>
+  </div>
+</div>
+
+<!-- ══ APP SHELL ══ -->
+<div class="app-shell" id="app-shell" style="display:none;">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🧠</div>
+      <div>
+        <div class="logo-text">FitMind.ai</div>
+        <div class="logo-sub">Smart Health Platform</div>
+      </div>
+    </div>
+
+    <nav class="nav-section">
+      <div class="nav-label">القائمة الرئيسية</div>
+      <button class="nav-item active" onclick="navTo('dashboard',this)"><i class="fa fa-gauge"></i> لوحة التحكم / Dashboard</button>
+      <button class="nav-item" onclick="navTo('food',this)"><i class="fa fa-camera"></i> تحليل الطعام / Food Analysis <span class="nav-badge">AI</span></button>
+      <button class="nav-item" onclick="navTo('metrics',this)"><i class="fa fa-ruler"></i> القياسات / Body Metrics</button>
+      <button class="nav-item" onclick="navTo('exercise',this)"><i class="fa fa-dumbbell"></i> التمارين / Exercise</button>
+      <button class="nav-item" onclick="navTo('injury',this)"><i class="fa fa-heart-pulse"></i> الإصابات / Injuries</button>
+      <button class="nav-item" onclick="navTo('reports',this)"><i class="fa fa-chart-line"></i> التقارير / Reports</button>
+    </nav>
+    <nav class="nav-section">
+      <div class="nav-label">الإعدادات</div>
+      <button class="nav-item" onclick="navTo('settings',this)"><i class="fa fa-gear"></i> الإعدادات / Settings</button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="avatar" id="sidebar-avatar">م</div>
+        <div style="overflow:hidden;">
+          <div class="user-name" id="sidebar-name">جاري التحميل...</div>
+          <div class="user-email" id="sidebar-email">...</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="تسجيل الخروج"><i class="fa fa-right-from-bracket"></i></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">لوحة التحكم / Dashboard</div>
+        <div class="topbar-sub" id="topbar-date">—</div>
+      </div>
+      <div class="topbar-actions">
+        <div class="icon-btn" title="الإشعارات"><i class="fa fa-bell"></i></div>
+        <button class="btn-primary" onclick="navTo('food',document.querySelectorAll('.nav-item')[1])"><i class="fa fa-camera"></i> تحليل وجبة</button>
+      </div>
+    </header>
+
+    <!-- ── DASHBOARD ── -->
+    <div class="page page-wrap active" id="pg-dashboard">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px;">
+        <div class="greeting">
+          <h1 id="greeting-text">مرحباً 👋</h1>
+          <p>يوم رائع لتحقيق أهدافك · Great day to hit your goals</p>
+        </div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card green">
+          <div class="metric-lbl">السعرات اليوم / Calories Today</div>
+          <div class="metric-val" style="color:var(--g-base);" id="dash-cal">—</div>
+          <div class="metric-change up"><i class="fa fa-fire fa-xs"></i> من الوجبات المسجلة</div>
+        </div>
+        <div class="metric-card coral">
+          <div class="metric-lbl">الوزن الحالي / Current Weight</div>
+          <div class="metric-val" style="color:var(--coral);" id="dash-weight">— <small style="font-size:14px;font-weight:400;">kg</small></div>
+          <div class="metric-change down"><i class="fa fa-weight-scale fa-xs"></i> آخر تسجيل / Latest record</div>
+        </div>
+        <div class="metric-card blue">
+          <div class="metric-lbl">مؤشر الكتلة / BMI</div>
+          <div class="metric-val" style="color:var(--blue);" id="dash-bmi">—</div>
+          <div class="metric-change up" id="dash-bmi-cat">—</div>
+        </div>
+        <div class="metric-card amber">
+          <div class="metric-lbl">هدفك / Your Goal</div>
+          <div class="metric-val" style="color:var(--amber);font-size:18px;" id="dash-goal">—</div>
+          <div class="metric-change warn"><i class="fa fa-bullseye fa-xs"></i> الهدف الرئيسي</div>
+        </div>
+      </div>
+
+      <div class="two-col" style="margin-bottom:16px;">
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i class="fa fa-chart-pie"></i> المغذيات اليوم / Macros Today</div></div>
+          <div class="card-body">
+            <div class="prog-row"><div class="prog-top"><span>بروتين / Protein</span><span id="prog-protein">0g</span></div><div class="prog-bar"><div class="prog-fill" id="fill-protein" style="width:0%;background:var(--g-base);"></div></div></div>
+            <div class="prog-row"><div class="prog-top"><span>كارب / Carbs</span><span id="prog-carbs">0g</span></div><div class="prog-bar"><div class="prog-fill" id="fill-carbs" style="width:0%;background:var(--blue);"></div></div></div>
+            <div class="prog-row" style="margin-bottom:0;"><div class="prog-top"><span>دهون / Fat</span><span id="prog-fat">0g</span></div><div class="prog-bar"><div class="prog-fill" id="fill-fat" style="width:0%;background:var(--amber);"></div></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i class="fa fa-clock-rotate-left"></i> آخر الوجبات / Recent Meals</div></div>
+          <div class="card-body" id="recent-meals-list" style="padding-top:8px;">
+            <p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">لا توجد وجبات مسجلة اليوم · No meals logged today</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fa fa-robot"></i> نصيحة ذكية / AI Tip</div></div>
+        <div class="card-body">
+          <div class="ai-insight" style="margin-top:0;">
+            <i class="fa fa-lightbulb"></i>
+            <div><h4>ابدأ يومك بتسجيل وجباتك · Start by logging your meals</h4><p>استخدم تحليل الطعام بالذكاء الاصطناعي لتتبع سعراتك ومغذياتك بدقة. التقط صورة لأي وجبة وسيحللها النظام فورًا · Use AI Food Analysis to accurately track your calories and nutrients.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FOOD ANALYSIS ── -->
+    <div class="page page-wrap" id="pg-food">
+      <div style="margin-bottom:22px;">
+        <h1>تحليل الطعام بالذكاء الاصطناعي</h1>
+        <p style="color:var(--muted);margin-top:4px;">AI Food Analysis — التقط صورة ليقوم النظام بتحليل القيمة الغذائية تلقائياً</p>
+      </div>
+      <div class="two-col" style="margin-bottom:16px;">
+        <div>
+          <div class="upload-zone" onclick="triggerUpload()" id="upload-zone">
+            <i class="fa fa-camera-retro"></i>
+            <h3>التقط أو ارفع صورة الوجبة · Upload Food Photo</h3>
+            <p>PNG, JPG, HEIC — انقر للرفع أو اسحب الصورة هنا</p>
+            <div style="margin-top:14px;">
+              <button class="btn-primary" onclick="event.stopPropagation();triggerUpload()" style="margin-left:6px;"><i class="fa fa-upload"></i> رفع صورة / Upload</button>
+              <button class="btn-ghost" onclick="event.stopPropagation();analyzeFood()"><i class="fa fa-brain"></i> تحليل ذكي / AI Analyze</button>
+            </div>
+          </div>
+          <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="previewImage(event)">
+          <div style="margin-top:12px;border-radius:var(--radius);overflow:hidden;background:var(--off);border:1px solid var(--border);min-height:60px;display:flex;align-items:center;justify-content:center;" id="preview-wrap">
+            <img id="food-preview" src="" alt="">
+            <span id="preview-placeholder" style="font-size:13px;color:var(--muted);padding:18px;"><i class="fa fa-image" style="margin-left:6px;"></i> معاينة الصورة · Image Preview</span>
+          </div>
+        </div>
+        <div class="card" id="analysis-card">
+          <div class="card-header"><div class="card-title"><i class="fa fa-microscope"></i> نتيجة التحليل / Analysis Result</div></div>
+          <div class="card-body" id="analysis-empty" style="text-align:center;padding:40px 20px;color:var(--muted);">
+            <i class="fa fa-camera fa-2x" style="margin-bottom:10px;display:block;"></i>
+            ارفع صورة الطعام لبدء التحليل<br><small>Upload food photo to start analysis</small>
+          </div>
+          <div class="card-body" id="analysis-result" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+              <div>
+                <div style="font-size:16px;font-weight:700;" id="food-name-result">—</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:3px;" id="food-size-result">—</div>
+              </div>
+              <div style="text-align:center;background:var(--g-pale);border-radius:12px;padding:10px 16px;border:1px solid var(--g-mint);">
+                <div style="font-size:28px;font-weight:800;color:var(--g-mid);" id="food-cal-result">—</div>
+                <div style="font-size:11px;color:var(--muted);">سعرة / kcal</div>
+              </div>
+            </div>
+            <div class="nutrient-row"><span>بروتين / Protein</span><span class="badge badge-green" id="r-protein">—</span></div>
+            <div class="nutrient-row"><span>كارب / Carbohydrates</span><span class="badge badge-blue" id="r-carbs">—</span></div>
+            <div class="nutrient-row"><span>دهون كلية / Total Fat</span><span class="badge badge-amber" id="r-fat">—</span></div>
+            <div class="nutrient-row"><span>سكر / Sugar</span><span class="badge badge-pink" id="r-sugar">—</span></div>
+            <div class="nutrient-row"><span>ألياف / Fiber</span><span class="badge badge-green" id="r-fiber">—</span></div>
+            <button class="btn-primary" style="width:100%;margin-top:14px;justify-content:center;" onclick="saveMealToDB()">
+              <i class="fa fa-floppy-disk"></i> حفظ في السجل / Save to Log
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saved meals from DB -->
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fa fa-list"></i> وجباتي المحفوظة / My Saved Meals</div></div>
+        <div class="card-body" id="saved-meals-container">
+          <p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0;">لا توجد وجبات محفوظة بعد · No saved meals yet</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BODY METRICS ── -->
+    <div class="page page-wrap" id="pg-metrics">
+      <div style="margin-bottom:22px;"><h1>القياسات الجسدية / Body Metrics</h1><p style="color:var(--muted);margin-top:4px;">تتبع تطور وزنك وقياساتك الجسدية</p></div>
+      <div class="two-col" style="margin-bottom:16px;">
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i class="fa fa-weight-scale"></i> مؤشر كتلة الجسم / BMI</div></div>
+          <div class="card-body">
+            <div class="bmi-ring-wrap">
+              <div class="bmi-ring"><div class="bmi-val" id="bmi-value">—</div><div class="bmi-sub">BMI</div></div>
+              <div class="bmi-cat" id="bmi-cat-badge"><i class="fa fa-circle-info"></i> <span id="bmi-cat-text">—</span></div>
+            </div>
+            <div class="meas-grid">
+              <div class="meas-item"><div class="meas-val" style="color:var(--g-mid);" id="m-weight">—</div><div class="meas-unit">kg</div><div class="meas-name">الوزن / Weight</div></div>
+              <div class="meas-item"><div class="meas-val" style="color:var(--blue);" id="m-height">—</div><div class="meas-unit">cm</div><div class="meas-name">الطول / Height</div></div>
+              <div class="meas-item"><div class="meas-val" style="color:var(--amber);" id="m-age">—</div><div class="meas-unit">سنة</div><div class="meas-name">العمر / Age</div></div>
+              <div class="meas-item"><div class="meas-val" style="color:var(--g-dark);" id="m-goal">—</div><div class="meas-unit"></div><div class="meas-name">الهدف / Goal</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i class="fa fa-pen-to-square"></i> تحديث القياسات / Update</div></div>
+          <div class="card-body">
+            <div class="form-group" style="margin-bottom:12px;">
+              <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">الوزن الجديد / New Weight (kg)</label>
+              <input id="new-weight" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--off);color:var(--text);outline:none;" type="number" placeholder="82.5">
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+              <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">الطول / Height (cm)</label>
+              <input id="new-height" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--off);color:var(--text);outline:none;" type="number" placeholder="175">
+            </div>
+            <button class="btn-primary" style="width:100%;justify-content:center;" onclick="updateMetrics()"><i class="fa fa-save"></i> حفظ القياسات / Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EXERCISE ── -->
+    <div class="page page-wrap" id="pg-exercise">
+      <div style="margin-bottom:22px;"><h1>التمارين الرياضية / Exercise</h1><p style="color:var(--muted);margin-top:4px;">تتبع تمارينك اليومية وخططك التدريبية</p></div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><div class="card-title"><i class="fa fa-fire"></i> ملخص التمرين اليوم</div></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+            <div class="meas-item"><div class="meas-val" style="color:var(--coral);">580</div><div class="meas-unit">kcal</div><div class="meas-name">محروقة / Burned</div></div>
+            <div class="meas-item"><div class="meas-val" style="color:var(--blue);">75</div><div class="meas-unit">دقيقة / min</div><div class="meas-name">المدة / Duration</div></div>
+            <div class="meas-item"><div class="meas-val" style="color:var(--g-mid);">7,240</div><div class="meas-unit">خطوة / step</div><div class="meas-name">المشي / Steps</div></div>
+            <div class="meas-item"><div class="meas-val" style="color:var(--pink);">142</div><div class="meas-unit">bpm</div><div class="meas-name">معدل القلب / HR</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><div class="card-title"><i class="fa fa-list"></i> فئات التمارين / Exercise Categories</div></div>
+        <div class="card-body">
+          <div class="three-col">
+            <div class="ex-card" onclick="showToast('💪 تمارين القوة — قريباً / Strength — coming soon')"><i class="fa fa-dumbbell"></i><div class="ex-name">قوة وعضلات / Strength</div><div class="ex-meta">12 تمرين متاح</div></div>
+            <div class="ex-card" onclick="showToast('🏃 كارديو — قريباً / Cardio — coming soon')"><i class="fa fa-person-running"></i><div class="ex-name">كارديو / Cardio</div><div class="ex-meta">8 تمارين متاحة</div></div>
+            <div class="ex-card" onclick="showToast('🧘 يوغا — قريباً / Yoga — coming soon')"><i class="fa fa-spa"></i><div class="ex-name">يوغا / Yoga & Flex</div><div class="ex-meta">10 تمارين متاحة</div></div>
+            <div class="ex-card" onclick="showToast('🏊 سباحة — قريباً / Swimming — coming soon')"><i class="fa fa-person-swimming"></i><div class="ex-name">سباحة / Swimming</div><div class="ex-meta">5 تمارين متاحة</div></div>
+            <div class="ex-card" onclick="showToast('🚴 دراجة — قريباً / Cycling — coming soon')"><i class="fa fa-bicycle"></i><div class="ex-name">دراجة / Cycling</div><div class="ex-meta">4 تمارين متاحة</div></div>
+            <div class="ex-card" onclick="showToast('🚶 مشي وجري — قريباً / Walk/Run — coming soon')"><i class="fa fa-person-walking"></i><div class="ex-name">مشي وجري / Walk/Run</div><div class="ex-meta">6 تمارين متاحة</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fa fa-calendar-check"></i> الخطة الأسبوعية / Weekly Plan</div></div>
+        <div class="card-body">
+          <div class="week-grid">
+            <div class="day-card today"><div class="day-name today">الاثنين</div><div class="day-icon">🏋️</div><div class="day-ex">صدر / Chest</div></div>
+            <div class="day-card"><div class="day-name">الثلاثاء</div><div class="day-icon">🏃</div><div class="day-ex">كارديو</div></div>
+            <div class="day-card"><div class="day-name">الأربعاء</div><div class="day-icon">🏋️</div><div class="day-ex">ظهر / Back</div></div>
+            <div class="day-card"><div class="day-name">الخميس</div><div class="day-icon">🧘</div><div class="day-ex">يوغا / Yoga</div></div>
+            <div class="day-card"><div class="day-name">الجمعة</div><div class="day-icon">🏋️</div><div class="day-ex">أرجل / Legs</div></div>
+            <div class="day-card today"><div class="day-name today">السبت</div><div class="day-icon">🏃</div><div class="day-ex">جري / Run</div></div>
+            <div class="day-card"><div class="day-name">الأحد</div><div class="day-icon">😴</div><div class="day-ex">راحة / Rest</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── INJURIES ── -->
+    <div class="page page-wrap" id="pg-injury">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px;">
+        <div><h1>الإصابات والاستشفاء / Injuries & Recovery</h1><p style="color:var(--muted);margin-top:4px;">تتبع الإصابات الرياضية ومتابعة خطط الاستشفاء</p></div>
+        <button class="btn-primary" onclick="showToast('📋 نموذج تسجيل الإصابة — قريباً · Injury form coming soon')"><i class="fa fa-plus"></i> تسجيل إصابة</button>
+      </div>
+      <div class="metrics-grid" style="margin-bottom:20px;">
+        <div class="metric-card coral"><div class="metric-lbl">إصابات نشطة / Active</div><div class="metric-val" style="color:var(--coral);">1</div><div class="metric-change down">تحت المتابعة</div></div>
+        <div class="metric-card amber"><div class="metric-lbl">استشفاء / Recovering</div><div class="metric-val" style="color:var(--amber);">1</div><div class="metric-change warn">73% مكتمل</div></div>
+        <div class="metric-card green"><div class="metric-lbl">تعافت / Healed</div><div class="metric-val" style="color:var(--g-mid);">5</div><div class="metric-change up">هذا العام</div></div>
+        <div class="metric-card blue"><div class="metric-lbl">أيام بدون إصابة</div><div class="metric-val" style="color:var(--blue);">14</div><div class="metric-change up">استمر!</div></div>
+      </div>
+      <div class="injury-card active-inj">
+        <div class="ic-circle" style="background:#FAECE7;color:var(--coral);font-size:18px;"><i class="fa fa-triangle-exclamation"></i></div>
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div class="injury-title">التواء في الرسغ الأيسر · Left Wrist Sprain</div>
+            <span class="badge badge-coral"><i class="fa fa-circle" style="font-size:6px;"></i> نشطة / Active</span>
+          </div>
+          <div class="injury-desc">إصابة درجة أولى أثناء تمرين الضغط — لا يوصى بتمارين الضغط لمدة أسبوع</div>
+          <div style="margin-top:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;"><span>الاستشفاء / Recovery</span><span style="color:var(--coral);">40%</span></div>
+            <div class="prog-bar"><div class="prog-fill" style="width:40%;background:var(--coral);"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:4px;">
+        <div class="card-header"><div class="card-title"><i class="fa fa-kit-medical"></i> نصائح الاستشفاء / Recovery Tips</div></div>
+        <div class="card-body">
+          <div class="three-col">
+            <div class="tip-card" style="background:var(--g-pale);"><i class="fa fa-snowflake" style="color:var(--g-mid);"></i><h4>الجليد والراحة</h4><p style="color:var(--g-mid);">20 دقيقة كل 4 ساعات</p></div>
+            <div class="tip-card" style="background:#E6F1FB;"><i class="fa fa-person-stretching" style="color:var(--blue);"></i><h4>إطالة لطيفة</h4><p style="color:var(--blue);">مرتين يومياً</p></div>
+            <div class="tip-card" style="background:#FAEEDA;"><i class="fa fa-heart-pulse" style="color:var(--amber);"></i><h4>رصد الألم</h4><p style="color:var(--amber);">سجّل مستوى الألم يومياً</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── REPORTS ── -->
+    <div class="page page-wrap" id="pg-reports">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px;">
+        <div><h1>التقارير التفصيلية / Detailed Reports</h1><p style="color:var(--muted);margin-top:4px;">تقارير يومية، أسبوعية وشهرية</p></div>
+        <button class="btn-ghost" onclick="window.print()"><i class="fa fa-download"></i> تصدير / Export</button>
+      </div>
+      <div class="tabs-row">
+        <button class="tab-btn active" onclick="switchTab(this,'daily')">يومي / Daily</button>
+        <button class="tab-btn" onclick="switchTab(this,'weekly')">أسبوعي / Weekly</button>
+        <button class="tab-btn" onclick="switchTab(this,'monthly')">شهري / Monthly</button>
+      </div>
+      <div class="tab-panel active" id="tab-daily">
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i class="fa fa-utensils"></i> وجبات اليوم / Today's Meals</div></div>
+          <div class="card-body" id="report-daily-meals">
+            <p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0;">لا توجد وجبات مسجلة اليوم</p>
+          </div>
+        </div>
+        <div class="ai-insight" style="margin-top:16px;">
+          <i class="fa fa-robot"></i>
+          <div><h4>تحليل ذكي لليوم · AI Daily Insight</h4><p id="ai-daily-tip">سجّل وجباتك لتحصل على تحليل مخصص بالذكاء الاصطناعي · Log your meals to get personalized AI analysis.</p></div>
+        </div>
+      </div>
+      <div class="tab-panel" id="tab-weekly">
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i class="fa fa-chart-bar"></i> ملخص الأسبوع</div></div>
+          <div class="card-body">
+            <p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0;">سيتم إضافة التقارير الأسبوعية قريباً · Weekly reports coming soon</p>
+          </div>
+        </div>
+      </div>
+      <div class="tab-panel" id="tab-monthly">
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i class="fa fa-calendar-days"></i> إحصائيات الشهر</div></div>
+          <div class="card-body">
+            <p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0;">سيتم إضافة التقارير الشهرية قريباً · Monthly reports coming soon</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div class="page page-wrap" id="pg-settings">
+      <div style="margin-bottom:22px;"><h1>الإعدادات / Settings</h1><p style="color:var(--muted);margin-top:4px;">إدارة حسابك وتفضيلاتك</p></div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fa fa-user-gear"></i> معلومات الحساب / Account Info</div></div>
+        <div class="card-body">
+          <div class="form-grid" style="max-width:600px;">
+            <div class="form-group"><label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">الاسم / Name</label><input id="set-name" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--off);color:var(--text);outline:none;" type="text"></div>
+            <div class="form-group"><label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">البريد / Email</label><input id="set-email" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--off);color:var(--text);outline:none;" type="email" dir="ltr" readonly></div>
+            <div class="form-group"><label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">الوزن / Weight (kg)</label><input id="set-weight" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--off);color:var(--text);outline:none;" type="number"></div>
+            <div class="form-group"><label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">الطول / Height (cm)</label><input id="set-height" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--off);color:var(--text);outline:none;" type="number"></div>
+          </div>
+          <button class="btn-primary" style="margin-top:14px;" onclick="saveSettings()"><i class="fa fa-save"></i> حفظ / Save Changes</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header"><div class="card-title"><i class="fa fa-shield"></i> الأمان / Security</div></div>
+        <div class="card-body">
+          <button class="btn-ghost" onclick="doLogout()"><i class="fa fa-right-from-bracket"></i> تسجيل الخروج / Sign Out</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app-shell -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="fa fa-circle-check"></i><span id="toast-msg"></span></div>
+
+<script>
+/* ══════════════════════════════════════════════
+   FIREBASE CONFIG
+   ══════════════════════════════════════════════
+   ← أضف بيانات مشروعك هنا من Firebase Console →
+   https://console.firebase.google.com
+   ══════════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+/* ── STATE ─────────────────────────────────── */
+let currentUser   = null;
+let userProfile   = {};
+let todayMeals    = [];
+let selectedGoal  = 'lose';
+let lastAnalyzed  = null;
+
+/* ── AUTH STATE OBSERVER ──────────────────── */
+auth.onAuthStateChanged(async user => {
+  document.getElementById('loading-screen').style.display = 'none';
+  if (user) {
+    currentUser = user;
+    await loadUserProfile(user.uid);
+    showApp();
+  } else {
+    currentUser = null;
+    userProfile = {};
+    showLoginPage();
+  }
+});
+
+/* ── LOGIN ────────────────────────────────── */
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pwd   = document.getElementById('login-pwd').value;
+  if (!email || !pwd) { showAuthError('login-error','يرجى ملء جميع الحقول · Please fill all fields'); return; }
+
+  const btn = document.getElementById('btn-login-submit');
+  btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جاري الدخول...';
+
+  try {
+    await auth.signInWithEmailAndPassword(email, pwd);
+    hideAuthError('login-error');
+  } catch(e) {
+    btn.disabled = false; btn.innerHTML = '<i class="fa fa-right-to-bracket"></i> تسجيل الدخول / Sign In';
+    showAuthError('login-error', getFirebaseError(e.code));
+  }
+}
+
+/* ── REGISTER ─────────────────────────────── */
+async function finishRegister() {
+  const name   = document.getElementById('reg-name').value.trim();
+  const email  = document.getElementById('reg-email').value.trim();
+  const pwd    = document.getElementById('reg-pwd').value;
+  const age    = parseInt(document.getElementById('reg-age').value) || 25;
+  const weight = parseFloat(document.getElementById('reg-weight').value) || 70;
+  const height = parseInt(document.getElementById('reg-height').value) || 170;
+  const gender = document.getElementById('reg-gender').value;
+
+  if (!name || !email || !pwd) { showAuthError('register-error','يرجى ملء جميع الحقول الأساسية · Fill all required fields'); return; }
+  if (pwd.length < 6) { showAuthError('register-error','كلمة المرور يجب أن تكون 6 أحرف على الأقل · Password must be at least 6 characters'); return; }
+
+  const btn = document.getElementById('btn-register-submit');
+  btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جاري الإنشاء...';
+
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pwd);
+    await cred.user.updateProfile({ displayName: name });
+
+    const profile = { name, email, age, weight, height, gender, goal: selectedGoal, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+    await db.collection('users').doc(cred.user.uid).set(profile);
+
+    hideAuthError('register-error');
+    showToast('🎉 تم إنشاء الحساب بنجاح · Account created!');
+  } catch(e) {
+    btn.disabled = false; btn.innerHTML = '<i class="fa fa-check"></i> إنشاء الحساب / Create Account';
+    showAuthError('register-error', getFirebaseError(e.code));
+  }
+}
+
+/* ── LOGOUT ───────────────────────────────── */
+async function doLogout() {
+  await auth.signOut();
+  showToast('تم تسجيل الخروج · Signed out');
+}
+
+/* ── LOAD USER PROFILE ────────────────────── */
+async function loadUserProfile(uid) {
+  try {
+    const doc = await db.collection('users').doc(uid).get();
+    if (doc.exists) {
+      userProfile = doc.data();
+    } else {
+      userProfile = { name: currentUser.displayName || currentUser.email, email: currentUser.email };
+    }
+    await loadTodayMeals(uid);
+    updateUI();
+  } catch(e) {
+    console.error('Error loading profile:', e);
+    userProfile = { name: currentUser.email, email: currentUser.email };
+    updateUI();
+  }
+}
+
+/* ── UPDATE UI WITH USER DATA ─────────────── */
+function updateUI() {
+  const name  = userProfile.name  || currentUser?.displayName || 'مستخدم';
+  const email = userProfile.email || currentUser?.email || '';
+  const firstLetter = name.charAt(0).toUpperCase();
+
+  // Sidebar
+  document.getElementById('sidebar-avatar').textContent = firstLetter;
+  document.getElementById('sidebar-name').textContent   = name;
+  document.getElementById('sidebar-email').textContent  = email;
+
+  // Greeting
+  const hour = new Date().getHours();
+  const greetAr = hour < 12 ? 'صباح الخير' : hour < 17 ? 'مساء الخير' : 'مساء النور';
+  document.getElementById('greeting-text').textContent = `${greetAr}، ${name.split(' ')[0]} 👋`;
+
+  // Date in topbar
+  const now = new Date();
+  document.getElementById('topbar-date').textContent = now.toLocaleDateString('ar-SA', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  // Dashboard metrics
+  if (userProfile.weight) {
+    document.getElementById('dash-weight').innerHTML = `${userProfile.weight} <small style="font-size:14px;font-weight:400;">kg</small>`;
+    document.getElementById('m-weight').textContent  = userProfile.weight;
+    if (userProfile.weight) document.getElementById('new-weight').value = userProfile.weight;
+  }
+  if (userProfile.height) {
+    document.getElementById('m-height').textContent = userProfile.height;
+    document.getElementById('new-height').value     = userProfile.height;
+  }
+  if (userProfile.age)  document.getElementById('m-age').textContent = userProfile.age;
+
+  // BMI
+  if (userProfile.weight && userProfile.height) {
+    const hm  = userProfile.height / 100;
+    const bmi = (userProfile.weight / (hm * hm)).toFixed(1);
+    const cat = bmiCategory(parseFloat(bmi));
+    document.getElementById('bmi-value').textContent    = bmi;
+    document.getElementById('dash-bmi').textContent     = bmi;
+    document.getElementById('bmi-cat-text').textContent = cat.ar;
+    document.getElementById('dash-bmi-cat').textContent = cat.ar;
+    document.getElementById('m-goal').textContent       = goalLabel(userProfile.goal);
+  }
+
+  // Goal
+  const goalText = goalLabel(userProfile.goal);
+  document.getElementById('dash-goal').textContent = goalText;
+
+  // Settings page
+  document.getElementById('set-name').value   = name;
+  document.getElementById('set-email').value  = email;
+  if (userProfile.weight) document.getElementById('set-weight').value = userProfile.weight;
+  if (userProfile.height) document.getElementById('set-height').value = userProfile.height;
+
+  // Update daily calories from meals
+  updateDashboardFromMeals();
+}
+
+/* ── MEALS ────────────────────────────────── */
+async function loadTodayMeals(uid) {
+  try {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const snap = await db.collection('users').doc(uid).collection('meals')
+      .where('timestamp', '>=', today)
+      .orderBy('timestamp','desc')
+      .limit(20)
+      .get();
+    todayMeals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderSavedMeals();
+  } catch(e) {
+    console.error('Meals load error:', e);
+    todayMeals = [];
+  }
+}
+
+function renderSavedMeals() {
+  const containers = ['saved-meals-container', 'recent-meals-list', 'report-daily-meals'];
+  const noMsg = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0;">لا توجد وجبات مسجلة اليوم · No meals logged today</p>';
+
+  if (!todayMeals.length) {
+    containers.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = noMsg; });
+    return;
+  }
+
+  let html = '';
+  todayMeals.forEach(m => {
+    const t = m.timestamp?.toDate ? m.timestamp.toDate().toLocaleTimeString('ar-SA', {hour:'2-digit',minute:'2-digit'}) : '—';
+    html += `<div class="saved-meal-row">
+      <div>
+        <div class="saved-meal-name">${m.name}</div>
+        <div class="saved-meal-time">${t} · ${m.size || ''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="badge badge-green">${m.calories} kcal</span>
+        <span style="font-size:11px;color:var(--muted);">P: ${m.protein}g · C: ${m.carbs}g · F: ${m.fat}g</span>
+      </div>
+    </div>`;
+  });
+
+  containers.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = html; });
+}
+
+function updateDashboardFromMeals() {
+  const totalCal  = todayMeals.reduce((s,m) => s + (m.calories||0), 0);
+  const totalProt = todayMeals.reduce((s,m) => s + (m.protein||0), 0);
+  const totalCarb = todayMeals.reduce((s,m) => s + (m.carbs||0), 0);
+  const totalFat  = todayMeals.reduce((s,m) => s + (m.fat||0), 0);
+
+  document.getElementById('dash-cal').textContent = totalCal || '—';
+
+  // Macros progress (rough targets)
+  const tProt = 160, tCarb = 250, tFat = 65;
+  document.getElementById('prog-protein').textContent = `${totalProt}g / ${tProt}g`;
+  document.getElementById('prog-carbs').textContent   = `${totalCarb}g / ${tCarb}g`;
+  document.getElementById('prog-fat').textContent     = `${totalFat}g / ${tFat}g`;
+  document.getElementById('fill-protein').style.width = Math.min(100, (totalProt/tProt*100)) + '%';
+  document.getElementById('fill-carbs').style.width   = Math.min(100, (totalCarb/tCarb*100)) + '%';
+  document.getElementById('fill-fat').style.width     = Math.min(100, (totalFat/tFat*100)) + '%';
+
+  // AI tip based on data
+  if (totalCal > 0) {
+    const tip = totalCal > 2000
+      ? 'تجاوزت الهدف اليومي من السعرات! حاول تقليل الوجبات الخفيفة الليلية.'
+      : totalCal < 1200
+      ? 'سعراتك منخفضة جداً اليوم! تأكد من تناول وجبات كافية للمحافظة على طاقتك.'
+      : 'أداؤك اليوم ممتاز! واصل تسجيل وجباتك للحصول على تحليل أدق.';
+    document.getElementById('ai-daily-tip').textContent = tip;
+  }
+}
+
+async function saveMealToDB() {
+  if (!lastAnalyzed || !currentUser) return;
+  try {
+    await db.collection('users').doc(currentUser.uid).collection('meals').add({
+      ...lastAnalyzed,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showToast('✅ تم حفظ الوجبة في السجل · Meal saved!');
+    await loadTodayMeals(currentUser.uid);
+    updateDashboardFromMeals();
+    renderSavedMeals();
+    lastAnalyzed = null;
+  } catch(e) {
+    showToast('❌ خطأ في الحفظ: ' + e.message);
+  }
+}
+
+/* ── METRICS ──────────────────────────────── */
+async function updateMetrics() {
+  if (!currentUser) return;
+  const weight = parseFloat(document.getElementById('new-weight').value);
+  const height = parseInt(document.getElementById('new-height').value);
+  if (!weight || !height) { showToast('❌ يرجى إدخال الوزن والطول'); return; }
+
+  try {
+    await db.collection('users').doc(currentUser.uid).update({ weight, height });
+    // Save to history
+    await db.collection('users').doc(currentUser.uid).collection('weight_history').add({
+      weight, height, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    userProfile.weight = weight;
+    userProfile.height = height;
+    updateUI();
+    showToast('✅ تم تحديث القياسات · Metrics updated!');
+  } catch(e) {
+    showToast('❌ خطأ في التحديث: ' + e.message);
+  }
+}
+
+/* ── SETTINGS SAVE ────────────────────────── */
+async function saveSettings() {
+  if (!currentUser) return;
+  const name   = document.getElementById('set-name').value.trim();
+  const weight = parseFloat(document.getElementById('set-weight').value);
+  const height = parseInt(document.getElementById('set-height').value);
+  try {
+    const update = {};
+    if (name)   { update.name = name; await currentUser.updateProfile({ displayName: name }); }
+    if (weight) update.weight = weight;
+    if (height) update.height = height;
+    await db.collection('users').doc(currentUser.uid).update(update);
+    Object.assign(userProfile, update);
+    updateUI();
+    showToast('✅ تم حفظ الإعدادات · Settings saved');
+  } catch(e) {
+    showToast('❌ خطأ: ' + e.message);
+  }
+}
+
+/* ── FOOD ANALYSIS (demo AI) ──────────────── */
+const foodDatabase = [
+  { name:'مكرونة بولونيز · Spaghetti Bolognese', size:'طبق واحد (350g)', calories:680, protein:38, carbs:85, fat:18, sugar:8, fiber:4 },
+  { name:'شكشوكة · Shakshuka', size:'طبق متوسط (300g)', calories:420, protein:22, carbs:35, fat:24, sugar:12, fiber:5 },
+  { name:'دجاج مشوي · Grilled Chicken', size:'صدر دجاج (200g)', calories:320, protein:54, carbs:0, fat:9, sugar:0, fiber:0 },
+  { name:'سلطة مشكلة · Mixed Salad', size:'طبق كبير (250g)', calories:180, protein:8, carbs:22, fat:7, sugar:10, fiber:6 },
+  { name:'أرز مع لحم · Rice & Meat', size:'طبق (400g)', calories:560, protein:32, carbs:70, fat:14, sugar:2, fiber:3 },
+  { name:'فول مدمس · Foul Medames', size:'طبق (250g)', calories:290, protein:18, carbs:40, fat:6, sugar:4, fiber:12 },
+  { name:'سمك مشوي · Grilled Fish', size:'قطعة (200g)', calories:240, protein:46, carbs:0, fat:5, sugar:0, fiber:0 },
+  { name:'بيضة مسلوقة · Boiled Egg', size:'بيضة كاملة (60g)', calories:90, protein:7, carbs:0, fat:6, sugar:0, fiber:0 },
+];
+
+function analyzeFood() {
+  const food = foodDatabase[Math.floor(Math.random() * foodDatabase.length)];
+  lastAnalyzed = food;
+
+  document.getElementById('food-name-result').textContent  = food.name;
+  document.getElementById('food-size-result').textContent  = `حجم التقدير: ${food.size}`;
+  document.getElementById('food-cal-result').textContent   = food.calories;
+  document.getElementById('r-protein').textContent         = `${food.protein}g`;
+  document.getElementById('r-carbs').textContent           = `${food.carbs}g`;
+  document.getElementById('r-fat').textContent             = `${food.fat}g`;
+  document.getElementById('r-sugar').textContent           = `${food.sugar}g`;
+  document.getElementById('r-fiber').textContent           = `${food.fiber}g`;
+
+  document.getElementById('analysis-empty').style.display  = 'none';
+  document.getElementById('analysis-result').style.display = 'block';
+  showToast('🧠 تم التحليل بالذكاء الاصطناعي · AI analysis complete');
+}
+
+/* ── PAGE SHOW/HIDE ───────────────────────── */
+function showApp() {
+  document.getElementById('page-login').style.display    = 'none';
+  document.getElementById('page-register').style.display = 'none';
+  document.getElementById('app-shell').style.display     = 'flex';
+}
+function showLoginPage() {
+  document.getElementById('page-login').style.display    = 'flex';
+  document.getElementById('page-register').style.display = 'none';
+  document.getElementById('app-shell').style.display     = 'none';
+  // Reset login btn
+  const btn = document.getElementById('btn-login-submit');
+  btn.disabled = false; btn.innerHTML = '<i class="fa fa-right-to-bracket"></i> تسجيل الدخول / Sign In';
+}
+function showRegister() {
+  document.getElementById('page-login').style.display    = 'none';
+  document.getElementById('page-register').style.display = 'flex';
+}
+function showLogin() {
+  document.getElementById('page-register').style.display = 'none';
+  document.getElementById('page-login').style.display    = 'flex';
+  document.getElementById('face-scan-wrap').style.display   = 'none';
+  document.getElementById('login-form-wrap').style.display  = 'block';
+}
+
+/* ── FACE SCAN (simulation) ───────────────── */
+function startFaceScan() {
+  document.getElementById('login-form-wrap').style.display  = 'none';
+  document.getElementById('face-scan-wrap').style.display   = 'block';
+  let p = 0;
+  const fill = document.getElementById('scan-fill');
+  const iv = setInterval(() => {
+    p += 2; fill.style.width = p + '%';
+    if (p >= 100) {
+      clearInterval(iv);
+      showToast('✅ تم التعرف على الوجه · Face recognized');
+      // Simulate login with demo account
+      auth.signInAnonymously().then(() => {}).catch(() => {
+        // If anonymous not enabled, just show the app as demo
+        document.getElementById('face-scan-wrap').style.display  = 'none';
+        document.getElementById('login-form-wrap').style.display = 'block';
+        showToast('⚠️ قم بتفعيل Anonymous Auth في Firebase لاستخدام هذه الميزة');
+      });
+    }
+  }, 50);
+}
+function cancelScan() {
+  document.getElementById('face-scan-wrap').style.display  = 'none';
+  document.getElementById('login-form-wrap').style.display = 'block';
+}
+
+/* ── NAVIGATION ───────────────────────────── */
+const pageMeta = {
+  dashboard: {ar:'لوحة التحكم', en:'Dashboard'},
+  food:      {ar:'تحليل الطعام', en:'Food Analysis'},
+  metrics:   {ar:'القياسات', en:'Body Metrics'},
+  exercise:  {ar:'التمارين', en:'Exercise'},
+  injury:    {ar:'الإصابات', en:'Injuries & Recovery'},
+  reports:   {ar:'التقارير', en:'Reports'},
+  settings:  {ar:'الإعدادات', en:'Settings'},
+};
+function navTo(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pg = document.getElementById('pg-' + id);
+  if (pg) pg.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const m = pageMeta[id] || {ar: id, en: id};
+  document.getElementById('topbar-title').textContent = m.ar + ' / ' + m.en;
+  window.scrollTo(0, 0);
+}
+
+/* ── TABS ─────────────────────────────────── */
+function switchTab(btn, name) {
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'tab-' + name);
+  });
+}
+
+/* ── FOOD UPLOAD ──────────────────────────── */
+function triggerUpload() { document.getElementById('file-input').click(); }
+function previewImage(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    document.getElementById('preview-placeholder').style.display = 'none';
+    const img = document.getElementById('food-preview');
+    img.src = ev.target.result;
+    img.style.cssText = 'display:block;width:100%;border-radius:var(--radius);max-height:200px;object-fit:cover;';
+    // Auto-analyze after upload
+    setTimeout(analyzeFood, 800);
+  };
+  r.readAsDataURL(f);
+}
+
+/* ── GOAL SELECT ──────────────────────────── */
+function selectGoal(btn) {
+  document.querySelectorAll('.goal-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedGoal = btn.dataset.goal || 'health';
+}
+
+/* ── PASSWORD TOGGLE ──────────────────────── */
+function togglePwd(inputId, iconId) {
+  const inp = document.getElementById(inputId);
+  const ico = document.getElementById(iconId);
+  if (inp.type === 'password') { inp.type = 'text';     ico.className = 'fa fa-eye-slash'; }
+  else                          { inp.type = 'password'; ico.className = 'fa fa-eye'; }
+}
+
+/* ── TOAST ────────────────────────────────── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+/* ── ERROR HELPERS ────────────────────────── */
+function showAuthError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display = 'block';
+}
+function hideAuthError(id) {
+  const el = document.getElementById(id);
+  el.style.display = 'none';
+}
+function getFirebaseError(code) {
+  const map = {
+    'auth/user-not-found':      'البريد الإلكتروني غير مسجل · Email not found',
+    'auth/wrong-password':      'كلمة المرور غير صحيحة · Wrong password',
+    'auth/invalid-email':       'البريد الإلكتروني غير صالح · Invalid email',
+    'auth/email-already-in-use':'البريد الإلكتروني مسجل مسبقاً · Email already in use',
+    'auth/weak-password':       'كلمة المرور ضعيفة (6 أحرف على الأقل) · Weak password',
+    'auth/too-many-requests':   'محاولات كثيرة، حاول لاحقاً · Too many attempts',
+    'auth/network-request-failed': 'خطأ في الشبكة · Network error',
+    'auth/invalid-credential':  'بريد أو كلمة مرور غير صحيحة · Invalid credentials',
+  };
+  return map[code] || `خطأ غير متوقع (${code}) · Unexpected error`;
+}
+
+/* ── BMI HELPERS ──────────────────────────── */
+function bmiCategory(bmi) {
+  if (bmi < 18.5) return { ar:'نحيف / Underweight',      color:'#378ADD' };
+  if (bmi < 25)   return { ar:'طبيعي / Normal',           color:'var(--g-base)' };
+  if (bmi < 30)   return { ar:'زائد قليلاً / Overweight', color:'var(--amber)' };
+  return                   { ar:'سمنة / Obese',            color:'var(--coral)' };
+}
+function goalLabel(goal) {
+  const map = { lose:'📉 فقدان الوزن', gain:'📈 زيادة الوزن', muscle:'💪 بناء العضلات', health:'❤️ الصحة العامة' };
+  return map[goal] || '—';
+}
+</script>
+</body>
+</html>
