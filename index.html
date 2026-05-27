@@ -860,6 +860,31 @@
           <p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0;">لا توجد وجبات محفوظة بعد · No saved meals yet</p>
         </div>
       </div>
+
+      <!-- ═══ WEEKLY NUTRITION PLAN ══════════════ -->
+      <div class="card" id="nutrition-plan-card" style="margin-top:16px;">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div class="card-title"><i class="fa fa-calendar-week"></i> خطتي الغذائية الأسبوعية — د. خالد</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span id="np-goal-badge" class="badge badge-green"></span>
+            <span id="np-week-badge" style="font-size:11px;color:var(--muted);"></span>
+            <button onclick="regeneratePlans(true)" style="padding:5px 12px;background:transparent;border:1px solid var(--g-mint);border-radius:8px;color:var(--g-mid);font-size:12px;cursor:pointer;font-family:inherit;"><i class="fa fa-rotate"></i> تجديد</button>
+          </div>
+        </div>
+        <div class="card-body" id="nutrition-plan-body">
+          <div style="text-align:center;padding:32px;color:var(--muted);" id="np-loading">
+            <i class="fa fa-robot fa-2x" style="color:var(--g-base);margin-bottom:10px;display:block;"></i>
+            <p>أضف مفتاح Gemini من الإعدادات ليقوم د. خالد بتوليد خطتك تلقائياً</p>
+          </div>
+          <!-- Day tabs -->
+          <div id="np-tabs" style="display:none;">
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px;" id="np-day-tabs"></div>
+            <div id="np-day-content"></div>
+            <!-- Weekly macros summary -->
+            <div id="np-macros-summary" style="margin-top:14px;padding:12px;background:var(--g-pale);border-radius:10px;font-size:13px;"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ── BODY METRICS ── -->
@@ -936,14 +961,13 @@
       <div class="card">
         <div class="card-header"><div class="card-title"><i class="fa fa-calendar-check"></i> الخطة الأسبوعية / Weekly Plan</div></div>
         <div class="card-body">
-          <div class="week-grid">
-            <div class="day-card today"><div class="day-name today">الاثنين</div><div class="day-icon">🏋️</div><div class="day-ex">صدر / Chest</div></div>
-            <div class="day-card"><div class="day-name">الثلاثاء</div><div class="day-icon">🏃</div><div class="day-ex">كارديو</div></div>
-            <div class="day-card"><div class="day-name">الأربعاء</div><div class="day-icon">🏋️</div><div class="day-ex">ظهر / Back</div></div>
-            <div class="day-card"><div class="day-name">الخميس</div><div class="day-icon">🧘</div><div class="day-ex">يوغا / Yoga</div></div>
-            <div class="day-card"><div class="day-name">الجمعة</div><div class="day-icon">🏋️</div><div class="day-ex">أرجل / Legs</div></div>
-            <div class="day-card today"><div class="day-name today">السبت</div><div class="day-icon">🏃</div><div class="day-ex">جري / Run</div></div>
-            <div class="day-card"><div class="day-name">الأحد</div><div class="day-icon">😴</div><div class="day-ex">راحة / Rest</div></div>
+          <!-- AI Training Plan -->
+          <div id="tp-loading" style="text-align:center;padding:24px;color:var(--muted);">
+            <i class="fa fa-spinner fa-spin" style="color:var(--g-base);"></i> جاري تحميل خطة التدريب...
+          </div>
+          <div id="tp-week-grid" style="display:none;">
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;" id="tp-day-tabs"></div>
+            <div id="tp-day-content"></div>
           </div>
         </div>
       </div>
@@ -1651,7 +1675,8 @@ async function changeGoal(btn, goal) {
     await db.collection('users').doc(currentUser.uid).update({goal});
     userProfile.goal = goal;
     updateUI();
-    showToast('تم التغيير: '+goalLabel(goal));
+    showToast('تم التغيير: '+goalLabel(goal)+' — جاري توليد الخطط...');
+    setTimeout(() => checkAndGeneratePlans(true), 500);
   } catch(e) { showToast('خطأ: '+e.message); }
 }
 
@@ -1814,6 +1839,8 @@ function showApp() {
   document.getElementById('page-login').style.display    = 'none';
   document.getElementById('page-register').style.display = 'none';
   document.getElementById('app-shell').style.display     = 'flex';
+  // Auto-generate plans on login
+  setTimeout(() => checkAndGeneratePlans(false), 800);
 }
 function showLoginPage() {
   document.getElementById('page-login').style.display    = 'flex';
@@ -1901,6 +1928,343 @@ function bmiCategory(bmi) {
 function goalLabel(goal) {
   const m={lose:'📉 دايت',strict:'⚡ دايت قاسي',cut:'✂️ تنشيف',bulk:'💪 تضخيم',healthygain:'🌱 تسمين صحي',gain:'📈 زيادة الوزن',muscle:'💪 بناء العضلات',health:'❤️ الصحة العامة'};
   return m[goal]||'📉 دايت';
+}
+
+
+/* ═══════════════════════════════════════════════
+   WEEKLY PLANS SYSTEM — DR. KHALID
+   نظام الخطط الأسبوعية التلقائية
+═══════════════════════════════════════════════ */
+
+function getWeekNumber(d) {
+  d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+}
+
+function calcTDEE(weight, height, age, gender, goal) {
+  // Mifflin-St Jeor BMR
+  const bmr = gender === 'female'
+    ? 10*weight + 6.25*height - 5*age - 161
+    : 10*weight + 6.25*height - 5*age + 5;
+  // Moderate activity × 1.55
+  const tdee = Math.round(bmr * 1.55);
+  const adj = {lose:-500, strict:-800, cut:-300, bulk:+400, healthygain:+300};
+  return Math.max(1200, tdee + (adj[goal]||0));
+}
+
+async function checkAndGeneratePlans(forceRegen) {
+  if (!currentUser || !geminiApiKey) {
+    renderNoApiKeyMessage();
+    return;
+  }
+  const uid      = currentUser.uid;
+  const goal     = userProfile.goal || 'lose';
+  const weekNum  = getWeekNumber(new Date());
+  const year     = new Date().getFullYear();
+
+  // Show loading
+  setNutritionLoading(true);
+  setTrainingLoading(true);
+
+  try {
+    // Check Firestore for existing plans
+    const npRef = db.collection('users').doc(uid).collection('plans').doc('nutrition');
+    const tpRef = db.collection('users').doc(uid).collection('plans').doc('training');
+    const [npSnap, tpSnap] = await Promise.all([npRef.get(), tpRef.get()]);
+
+    const npData = npSnap.exists ? npSnap.data() : null;
+    const tpData = tpSnap.exists ? tpSnap.data() : null;
+
+    const npStale = !npData || npData.goal !== goal || npData.weekNum !== weekNum || npData.year !== year || forceRegen;
+    const tpStale = !tpData || tpData.goal !== goal || tpData.weekNum !== weekNum || tpData.year !== year || forceRegen;
+
+    // Generate what's needed
+    if (npStale) {
+      await generateAndSaveNutritionPlan(uid, goal, weekNum, year);
+    } else {
+      renderNutritionPlan(JSON.parse(npData.content), goal);
+    }
+
+    if (tpStale) {
+      await generateAndSaveTrainingPlan(uid, goal, weekNum, year);
+    } else {
+      renderTrainingPlan(JSON.parse(tpData.content), goal);
+    }
+
+  } catch(e) {
+    console.error('Plans error:', e);
+    showToast('خطأ في الخطط: ' + e.message);
+    setNutritionLoading(false);
+    setTrainingLoading(false);
+  }
+}
+
+async function generateAndSaveNutritionPlan(uid, goal, weekNum, year) {
+  const w   = userProfile.weight || 75;
+  const h   = userProfile.height || 175;
+  const age = userProfile.age    || 25;
+  const gen = userProfile.gender || 'male';
+  const kcal = calcTDEE(w, h, age, gen, goal);
+  const goalNames = {lose:'دايت - خسارة تدريجية',strict:'دايت قاسي - خسارة سريعة',cut:'تنشيف - إظهار العضل',bulk:'تضخيم - بناء العضل',healthygain:'تسمين صحي'};
+
+  const prompt = 'انت د. خالد خبير تغذية علاجية بخبرة 20 عاما. ' +
+    'المستخدم: وزن '+w+'كجم، طول '+h+'سم، عمر '+age+' سنة، جنس '+(gen==='female'?'انثى':'ذكر')+'. ' +
+    'الهدف: '+(goalNames[goal]||goal)+'. ' +
+    'السعرات اليومية المستهدفة: '+kcal+' سعرة. ' +
+    'صمم خطة غذائية متنوعة لاسبوع كامل (7 ايام). اجعل وجبات كل يوم مختلفة عن بقية الايام. ' +
+    'اجب بـ JSON فقط بدون اي نص خارجه: ' +
+    '{"dailyCalories":'+kcal+',"goal":"'+goal+'","weeklyNote":"ملاحظة قصيرة من د. خالد عن هذا البرنامج","macros":{"protein":0,"carbs":0,"fat":0},' +
+    '"days":[{"day":"الاثنين","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},' +
+    '{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},' +
+    '{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},' +
+    '{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0},' +
+    'نفس البنية لـ الثلاثاء والاربعاء والخميس والجمعة والسبت والاحد]}';
+
+  const raw = await callGemini(prompt);
+  const json = raw.replace(/```json\n?|\n?```/g,'').trim();
+  const data = JSON.parse(json);
+
+  // Save to Firestore
+  await db.collection('users').doc(uid).collection('plans').doc('nutrition').set({
+    goal, weekNum, year, content: JSON.stringify(data),
+    generatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  renderNutritionPlan(data, goal);
+}
+
+async function generateAndSaveTrainingPlan(uid, goal, weekNum, year) {
+  const w   = userProfile.weight || 75;
+  const h   = userProfile.height || 175;
+  const age = userProfile.age    || 25;
+  const inj = userProfile.injuries || 'لا توجد';
+  const goalNames = {lose:'دايت - حرق دهون',strict:'دايت قاسي - حرق مكثف',cut:'تنشيف - إظهار العضل',bulk:'تضخيم - بناء كتلة عضلية',healthygain:'تسمين صحي - تضخيم خفيف'};
+
+  const prompt = 'انت د. خالد مدرب كمال اجسام بخبرة 20 عاما. ' +
+    'المستخدم: وزن '+w+'كجم، طول '+h+'سم، عمر '+age+' سنة. ' +
+    'الهدف: '+(goalNames[goal]||goal)+'. الاصابات: '+inj+'. ' +
+    'صمم برنامج تدريبي اسبوعي (7 ايام) متنوع ومتدرج. تجنب التمارين التي تؤثر على منطقة الاصابة. ' +
+    'اجب بـ JSON فقط: ' +
+    '{"goal":"'+goal+'","weeklyNote":"ملاحظة تدريبية",' +
+    '"days":[{"day":"الاثنين","type":"قوة","focus":"الصدر والاكتاف","duration":"60 دقيقة","icon":"🏋️",' +
+    '"exercises":[{"name":"اسم التمرين","sets":4,"reps":"10-12","rest":"90 ث","notes":"ملاحظة"}]},' +
+    'نفس البنية لـ الثلاثاء والاربعاء والخميس والجمعة والسبت والاحد. ' +
+    'يوم او يومين راحة نشطة مع تمارين خفيفة او تمدد]}';
+
+  const raw = await callGemini(prompt);
+  const json = raw.replace(/```json\n?|\n?```/g,'').trim();
+  const data = JSON.parse(json);
+
+  await db.collection('users').doc(uid).collection('plans').doc('training').set({
+    goal, weekNum, year, content: JSON.stringify(data),
+    generatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  renderTrainingPlan(data, goal);
+}
+
+/* ── RENDER NUTRITION PLAN ──────────────── */
+let activeNpDay = 0;
+let currentNpData = null;
+
+function renderNutritionPlan(data, goal) {
+  currentNpData = data;
+  setNutritionLoading(false);
+  const goalNames = {lose:'📉 دايت',strict:'⚡ دايت قاسي',cut:'✂️ تنشيف',bulk:'💪 تضخيم',healthygain:'🌱 تسمين صحي'};
+
+  const badge = document.getElementById('np-goal-badge');
+  if (badge) badge.textContent = goalNames[goal]||goal;
+
+  const weekBadge = document.getElementById('np-week-badge');
+  if (weekBadge) weekBadge.textContent = 'الأسبوع ' + getWeekNumber(new Date());
+
+  const tabs = document.getElementById('np-day-tabs');
+  const cont = document.getElementById('np-day-content');
+  const wrap = document.getElementById('np-tabs');
+  if (!tabs||!cont||!wrap) return;
+  wrap.style.display='block';
+
+  const dayAbbr = ['إث','ث','أر','خم','ج','سب','أح'];
+  tabs.innerHTML = '';
+  if (data.days) {
+    data.days.forEach((d,i) => {
+      const btn = document.createElement('button');
+      btn.className = 'np-day-tab' + (i===0?' active':'');
+      btn.style.cssText = 'padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:'+(i===0?'var(--g-base)':'var(--off)')+';color:'+(i===0?'#fff':'var(--text)')+';font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s;';
+      btn.textContent = (dayAbbr[i]||d.day);
+      btn.onclick = () => { activeNpDay=i; renderNpDay(data,i); updateNpTabs(i,data.days.length); };
+      tabs.appendChild(btn);
+    });
+  }
+
+  // Macros summary
+  const ms = document.getElementById('np-macros-summary');
+  if (ms && data.macros) {
+    ms.innerHTML = '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">' +
+      '<span style="font-weight:700;color:var(--g-mid);">يومياً:</span>' +
+      '<span><i class="fa fa-fire" style="color:var(--coral);"></i> ' + data.dailyCalories + ' سعرة</span>' +
+      '<span style="color:var(--g-mid);">بروتين: ' + data.macros.protein + 'g</span>' +
+      '<span style="color:var(--blue);">كارب: ' + data.macros.carbs + 'g</span>' +
+      '<span style="color:var(--amber);">دهون: ' + data.macros.fat + 'g</span>' +
+      '</div>' +
+      (data.weeklyNote ? '<p style="margin-top:8px;font-size:12px;color:var(--g-mid);font-style:italic;">💡 ' + data.weeklyNote + '</p>' : '');
+  }
+
+  renderNpDay(data, 0);
+}
+
+function updateNpTabs(activeIdx, total) {
+  const tabs = document.querySelectorAll('#np-day-tabs button');
+  tabs.forEach((b,i) => {
+    b.style.background = i===activeIdx ? 'var(--g-base)' : 'var(--off)';
+    b.style.color      = i===activeIdx ? '#fff' : 'var(--text)';
+    b.style.borderColor= i===activeIdx ? 'var(--g-base)' : 'var(--border)';
+  });
+}
+
+function renderNpDay(data, idx) {
+  const cont = document.getElementById('np-day-content');
+  if (!cont || !data.days) return;
+  const day = data.days[idx];
+  if (!day) return;
+
+  const mealColors = {إفطار:'var(--amber)',غداء:'var(--g-base)',عشاء:'var(--blue)',سناك:'var(--pink)'};
+  let html = '<div style="font-weight:700;color:var(--g-dark);margin-bottom:12px;font-size:15px;">' + day.day + '</div>';
+  if (day.meals) {
+    day.meals.forEach(m => {
+      const color = mealColors[m.type] || 'var(--muted)';
+      html += '<div style="padding:12px;background:var(--off);border-radius:10px;margin-bottom:10px;border-right:3px solid '+color+';">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+        '<div><span style="font-size:11px;color:'+color+';font-weight:700;background:'+color+'22;padding:2px 8px;border-radius:20px;">'+m.type+'</span>' +
+        '<span style="font-weight:600;margin-right:8px;font-size:14px;">'+m.name+'</span></div>' +
+        '<span style="font-size:13px;font-weight:700;color:var(--coral);">'+m.calories+' kcal</span></div>' +
+        '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">'+m.details+'</div>' +
+        '<div style="display:flex;gap:10px;font-size:11px;">' +
+        '<span style="color:var(--g-mid);">P: '+m.protein+'g</span>' +
+        '<span style="color:var(--blue);">C: '+m.carbs+'g</span>' +
+        '<span style="color:var(--amber);">F: '+m.fat+'g</span></div></div>';
+    });
+  }
+  if (day.totalCalories) {
+    html += '<div style="text-align:left;padding:8px 12px;background:var(--g-pale);border-radius:8px;font-size:13px;font-weight:700;color:var(--g-mid);">المجموع: '+day.totalCalories+' سعرة</div>';
+  }
+  cont.innerHTML = html;
+}
+
+/* ── RENDER TRAINING PLAN ──────────────── */
+let activeTPDay = 0;
+let currentTPData = null;
+
+function renderTrainingPlan(data, goal) {
+  currentTPData = data;
+  setTrainingLoading(false);
+
+  const tabs = document.getElementById('tp-day-tabs');
+  const cont = document.getElementById('tp-day-content');
+  const wrap = document.getElementById('tp-week-grid');
+  if (!tabs||!cont||!wrap) return;
+  wrap.style.display='block';
+  const loadEl = document.getElementById('tp-loading');
+  if (loadEl) loadEl.style.display='none';
+
+  const dayAbbr = ['إث','ث','أر','خم','ج','سب','أح'];
+  tabs.innerHTML = '';
+  if (data.days) {
+    data.days.forEach((d,i) => {
+      const isRest = d.type && (d.type.includes('راحة')||d.type.includes('rest'));
+      const btn = document.createElement('button');
+      btn.style.cssText='padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:'+(i===0?'var(--g-base)':'var(--off)')+';color:'+(i===0?'#fff':'var(--text)')+';font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s;';
+      btn.textContent=(dayAbbr[i]||d.day)+(isRest?' 😴':'');
+      btn.onclick=()=>{activeTPDay=i;renderTPDay(data,i);updateTPTabs(i,data.days.length);};
+      tabs.appendChild(btn);
+    });
+  }
+
+  if (data.weeklyNote) {
+    const note = document.createElement('div');
+    note.style.cssText='font-size:12px;color:var(--g-mid);font-style:italic;margin-bottom:10px;padding:8px 12px;background:var(--g-pale);border-radius:8px;';
+    note.innerHTML='💡 ' + data.weeklyNote;
+    cont.before(note);
+  }
+
+  renderTPDay(data, 0);
+}
+
+function updateTPTabs(activeIdx, total) {
+  const tabs = document.querySelectorAll('#tp-day-tabs button');
+  tabs.forEach((b,i)=>{
+    b.style.background = i===activeIdx ? 'var(--g-base)' : 'var(--off)';
+    b.style.color      = i===activeIdx ? '#fff' : 'var(--text)';
+    b.style.borderColor= i===activeIdx ? 'var(--g-base)' : 'var(--border)';
+  });
+}
+
+function renderTPDay(data, idx) {
+  const cont = document.getElementById('tp-day-content');
+  if (!cont || !data.days) return;
+  const day = data.days[idx];
+  if (!day) return;
+
+  const isRest = day.type && (day.type.includes('راحة')||day.type.includes('rest'));
+  let html = '<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">' +
+    '<span style="font-size:22px;">' + (day.icon||'🏋️') + '</span>' +
+    '<div><div style="font-weight:700;font-size:16px;">' + day.day + ' — ' + day.focus + '</div>' +
+    '<div style="font-size:12px;color:var(--muted);">' + (day.type||'') + (day.duration?' · '+day.duration:'') + '</div></div></div>';
+
+  if (isRest || !day.exercises || day.exercises.length===0) {
+    html += '<div style="text-align:center;padding:24px;color:var(--muted);background:var(--off);border-radius:10px;">😴 يوم راحة نشطة<br><small>تمدد خفيف · مشي · تنفس</small></div>';
+  } else {
+    day.exercises.forEach((ex,i) => {
+      html += '<div style="padding:12px;background:var(--off);border-radius:10px;margin-bottom:8px;border-right:3px solid var(--g-base);">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+        '<div style="font-weight:700;font-size:14px;">' + (i+1) + '. ' + ex.name + '</div>' +
+        '<div style="display:flex;gap:6px;">' +
+        '<span style="background:var(--g-pale);color:var(--g-mid);padding:2px 8px;border-radius:20px;font-size:12px;font-weight:600;">' + ex.sets + ' سيت</span>' +
+        '<span style="background:#E6F1FB;color:var(--blue);padding:2px 8px;border-radius:20px;font-size:12px;font-weight:600;">' + ex.reps + ' تكرار</span></div></div>' +
+        '<div style="display:flex;gap:16px;font-size:12px;color:var(--muted);">' +
+        '<span><i class="fa fa-clock"></i> راحة: ' + ex.rest + '</span>' +
+        (ex.notes ? '<span>' + ex.notes + '</span>' : '') + '</div></div>';
+    });
+  }
+  cont.innerHTML = html;
+}
+
+/* ── HELPER STATES ──────────────────────── */
+function setNutritionLoading(loading) {
+  const loadEl = document.getElementById('np-loading');
+  const tabsEl = document.getElementById('np-tabs');
+  if (loading) {
+    if (loadEl) { loadEl.style.display='block'; loadEl.innerHTML='<i class="fa fa-spinner fa-spin fa-2x" style="color:var(--g-base);margin-bottom:10px;display:block;"></i><p>د. خالد يصمم خطتك الغذائية...</p>'; }
+    if (tabsEl) tabsEl.style.display='none';
+  } else {
+    if (loadEl) loadEl.style.display='none';
+  }
+}
+
+function setTrainingLoading(loading) {
+  const loadEl = document.getElementById('tp-loading');
+  const wrapEl = document.getElementById('tp-week-grid');
+  if (loadEl) loadEl.style.display = loading ? 'block' : 'none';
+}
+
+function renderNoApiKeyMessage() {
+  const npEl = document.getElementById('np-loading');
+  if (npEl) {
+    npEl.style.display='block';
+    npEl.innerHTML='<i class="fa fa-robot fa-2x" style="color:var(--g-base);margin-bottom:10px;display:block;"></i><p>أضف <a href="#" onclick="navTo('settings',null)" style="color:var(--g-base);">مفتاح Gemini</a> من الإعدادات ليقوم د. خالد بتوليد خطتك الغذائية والتدريبية تلقائياً</p>';
+  }
+  const tpEl = document.getElementById('tp-loading');
+  if (tpEl) {
+    tpEl.style.display='block';
+    tpEl.innerHTML='<i class="fa fa-robot" style="color:var(--g-base);"></i> أضف مفتاح Gemini لتوليد البرنامج التدريبي';
+  }
+}
+
+async function regeneratePlans(force) {
+  await checkAndGeneratePlans(force||false);
+  showToast('✅ تم تجديد الخطط');
 }
 
 /* ── INIT ─────────────────────────────────── */
