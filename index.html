@@ -2252,13 +2252,16 @@ function setTrainingLoading(loading) {
 function renderNoApiKeyMessage() {
   const npEl = document.getElementById('np-loading');
   if (npEl) {
-    npEl.style.display='block';
-    npEl.innerHTML='<i class="fa fa-robot fa-2x" style="color:var(--g-base);margin-bottom:10px;display:block;"></i><p>أضف <a href="#" onclick="navTo(\'settings\',null)" style="color:var(--g-base);">مفتاح Gemini</a> من الإعدادات ليقوم د. خالد بتوليد خطتك الغذائية والتدريبية تلقائياً</p>';
+    npEl.style.display = 'block';
+    npEl.innerHTML = '<i class="fa fa-robot fa-2x" style="color:var(--g-base);margin-bottom:10px;display:block;"></i>' +
+      '<p>أضف <a href="#" id="go-settings-link" style="color:var(--g-base);">مفتاح Gemini</a> من الإعدادات ليقوم د. خالد بتوليد خطتك الغذائية والتدريبية تلقائياً</p>';
+    const lnk = document.getElementById('go-settings-link');
+    if (lnk) lnk.onclick = function(){ navTo('settings', null); return false; };
   }
   const tpEl = document.getElementById('tp-loading');
   if (tpEl) {
-    tpEl.style.display='block';
-    tpEl.innerHTML='<i class="fa fa-robot" style="color:var(--g-base);"></i> أضف مفتاح Gemini لتوليد البرنامج التدريبي';
+    tpEl.style.display = 'block';
+    tpEl.innerHTML = '<i class="fa fa-robot" style="color:var(--g-base);"></i> أضف مفتاح Gemini لتوليد البرنامج التدريبي';
   }
 }
 
