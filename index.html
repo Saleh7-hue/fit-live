@@ -875,17 +875,24 @@
         <div>
           <div class="upload-zone" onclick="triggerUpload()" id="upload-zone">
             <i class="fa fa-camera-retro"></i>
-            <h3>التقط أو ارفع صورة الوجبة · Upload Food Photo</h3>
-            <p>PNG, JPG, HEIC — انقر للرفع أو اسحب الصورة هنا</p>
+            <h3>التقط أو ارفع صورة الوجبة</h3>
+            <p>PNG, JPG, HEIC — انقر للرفع</p>
             <div style="margin-top:14px;">
-              <button class="btn-primary" onclick="event.stopPropagation();triggerUpload()" style="margin-left:6px;"><i class="fa fa-upload"></i> رفع صورة / Upload</button>
-              <button class="btn-ghost" onclick="event.stopPropagation();analyzeFood()"><i class="fa fa-brain"></i> تحليل ذكي / AI Analyze</button>
+              <button class="btn-primary" onclick="event.stopPropagation();triggerUpload()"><i class="fa fa-camera"></i> رفع صورة</button>
             </div>
           </div>
           <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="previewImage(event)">
           <div style="margin-top:12px;border-radius:var(--radius);overflow:hidden;background:var(--off);border:1px solid var(--border);min-height:60px;display:flex;align-items:center;justify-content:center;" id="preview-wrap">
             <img id="food-preview" src="" alt="">
-            <span id="preview-placeholder" style="font-size:13px;color:var(--muted);padding:18px;"><i class="fa fa-image" style="margin-left:6px;"></i> معاينة الصورة · Image Preview</span>
+            <span id="preview-placeholder" style="font-size:13px;color:var(--muted);padding:18px;"><i class="fa fa-image" style="margin-left:6px;"></i> معاينة الصورة</span>
+          </div>
+          <!-- تحليل نصي -->
+          <div style="margin-top:12px;background:var(--off);border:1px solid var(--border);border-radius:var(--radius);padding:12px;">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:8px;"><i class="fa fa-keyboard" style="margin-left:6px;"></i> أو اكتب اسم الوجبة مباشرة:</p>
+            <div style="display:flex;gap:8px;">
+              <input id="food-text-input" type="text" placeholder="مثال: كبسة دجاج، شاورما، قهوة..." style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text);outline:none;font-family:inherit;" onkeydown="if(event.key==='Enter')analyzeFoodByText()" />
+              <button class="btn-primary" onclick="analyzeFoodByText()" style="white-space:nowrap;"><i class="fa fa-brain"></i> تحليل</button>
+            </div>
           </div>
         </div>
         <div class="card" id="analysis-card">
@@ -1765,7 +1772,7 @@ function previewImage(e) {
   r.readAsDataURL(f);
 }
 
-async function analyzeFood() {
+function showAnalysisLoading() {
   document.getElementById('analysis-empty').style.display  = 'none';
   document.getElementById('analysis-result').style.display = 'none';
   const existLoad = document.getElementById('analysis-loading');
@@ -1775,41 +1782,66 @@ async function analyzeFood() {
   loadDiv.style.cssText='padding:32px;text-align:center;color:var(--muted);';
   loadDiv.innerHTML='<i class="fa fa-spinner fa-spin fa-2x" style="color:var(--g-base);"></i><p style="margin-top:12px;">د. خالد يحلل الوجبة...</p>';
   document.getElementById('analysis-card').appendChild(loadDiv);
+  return loadDiv;
+}
+function showAnalysisError(msg) {
+  const l = document.getElementById('analysis-loading'); if(l) l.remove();
+  const el = document.getElementById('analysis-empty');
+  el.style.display='block';
+  el.innerHTML=`<i class="fa fa-circle-exclamation fa-2x" style="color:#ef4444;margin-bottom:10px;display:block;"></i><p style="color:#ef4444;">${msg}</p>`;
+}
+function checkGeminiKey() {
+  if (!geminiApiKey) {
+    const el = document.getElementById('analysis-empty');
+    el.style.display='block';
+    el.innerHTML='<i class="fa fa-key fa-2x" style="color:var(--g-base);margin-bottom:12px;display:block;"></i><p>أضف مفتاح Gemini من <b onclick="navTo(\'settings\',null)" style="cursor:pointer;color:var(--g-base);text-decoration:underline;">الإعدادات</b> لتفعيل التحليل</p>';
+    return false;
+  }
+  return true;
+}
+
+/* تحليل بالصورة */
+async function analyzeFood() {
+  if (!checkGeminiKey()) return;
+  if (!foodImageBase64) { showToast('📷 ارفع صورة أولاً، أو اكتب اسم الوجبة في الحقل بالأسفل'); return; }
+  const loadDiv = showAnalysisLoading();
   try {
-    let result;
-    if (foodImageBase64 && geminiApiKey) {
-      const imagePrompt = `You are a precise food nutrition expert. Look carefully at this image and identify EXACTLY what food is shown.
-DO NOT guess or assume — only describe what you actually see in the image.
-Return ONLY a valid JSON object with no extra text, no markdown, no explanation:
-{"name":"<exact Arabic name of what you see>","size":"<estimated portion size>","calories":<number>,"protein":<number>,"carbs":<number>,"fat":<number>,"sugar":<number>,"fiber":<number>}
-All numeric values must be realistic estimates in grams (protein/carbs/fat/sugar/fiber) and kcal (calories).`;
-      const txt = await callGemini(imagePrompt, foodImageBase64, foodImageMime);
-      const clean = txt.replace(/```json\n?|\n?```|```/g,'').trim();
-      const jsonMatch = clean.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('لم يتمكن الذكاء الاصطناعي من قراءة الصورة، حاول مرة أخرى');
-      result = JSON.parse(jsonMatch[0]);
-    } else if (geminiApiKey) {
-      const desc = prompt('اكتب اسم الوجبة:'); if(!desc){loadDiv.remove();return;}
-      const textPrompt = `أنت خبير تغذية دقيق. أعطني القيم الغذائية الحقيقية والمنطقية لوجبة "${desc}".
-أجب بـ JSON فقط بدون أي نص آخر:
-{"name":"${desc}","size":"<حجم حصة واحدة>","calories":<عدد السعرات الحرارية>,"protein":<البروتين بالجرام>,"carbs":<الكربوهيدرات بالجرام>,"fat":<الدهون بالجرام>,"sugar":<السكر بالجرام>,"fiber":<الألياف بالجرام>}`;
-      const txt = await callGemini(textPrompt);
-      const clean = txt.replace(/```json\n?|\n?```|```/g,'').trim();
-      const jsonMatch = clean.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('خطأ في الاستجابة');
-      result = JSON.parse(jsonMatch[0]);
-    } else {
-      loadDiv.remove();
-      document.getElementById('analysis-empty').style.display='block';
-      document.getElementById('analysis-empty').innerHTML='<i class="fa fa-key fa-2x" style="color:var(--g-base);margin-bottom:12px;"></i><p>أضف مفتاح Gemini من <b>الإعدادات</b> لتحليل صور الطعام بالذكاء الاصطناعي</p>';
-      showToast('⚠️ أضف مفتاح Gemini من الإعدادات'); return;
-    }
+    const imagePrompt = `You are a precise food nutrition expert. Look carefully at this image and identify EXACTLY what food or drink is shown.
+DO NOT guess — only describe what you actually see in the image.
+Return ONLY a valid JSON object, no extra text, no markdown:
+{"name":"<exact Arabic name>","size":"<estimated portion>","calories":<kcal number>,"protein":<grams>,"carbs":<grams>,"fat":<grams>,"sugar":<grams>,"fiber":<grams>}`;
+    const txt = await callGemini(imagePrompt, foodImageBase64, foodImageMime);
+    const jsonMatch = txt.replace(/```json?|```/g,'').trim().match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('فشل التعرف على الصورة، جرب صورة أوضح');
+    const result = JSON.parse(jsonMatch[0]);
     loadDiv.remove(); displayFoodResult(result);
-    showToast('🧠 تم التحليل — د. خالد');
+    showToast('🧠 تم التحليل بنجاح');
   } catch(e) {
-    loadDiv.remove();
-    document.getElementById('analysis-empty').style.display='block';
-    showToast('❌ '+e.message);
+    showAnalysisError('❌ ' + e.message);
+  }
+}
+
+/* تحليل بالنص */
+async function analyzeFoodByText() {
+  if (!checkGeminiKey()) return;
+  const input = document.getElementById('food-text-input');
+  const desc = (input ? input.value : '').trim();
+  if (!desc) { showToast('اكتب اسم الوجبة أو المشروب أولاً'); input && input.focus(); return; }
+  const loadDiv = showAnalysisLoading();
+  try {
+    const textPrompt = `أنت خبير تغذية دقيق. أعطني القيم الغذائية الواقعية لـ "${desc}" (حصة واحدة عادية).
+أجب بـ JSON فقط بدون أي نص آخر أو markdown:
+{"name":"${desc}","size":"حصة واحدة","calories":0,"protein":0,"carbs":0,"fat":0,"sugar":0,"fiber":0}
+استبدل الأصفار بالقيم الحقيقية بالجرام والسعرات.`;
+    const txt = await callGemini(textPrompt);
+    const jsonMatch = txt.replace(/```json?|```/g,'').trim().match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('لم يتعرف النظام على الوجبة، جرب اسماً آخر');
+    const result = JSON.parse(jsonMatch[0]);
+    loadDiv.remove(); displayFoodResult(result);
+    if (input) input.value = '';
+    showToast('🧠 تم التحليل — ' + desc);
+  } catch(e) {
+    showAnalysisError('❌ ' + e.message);
   }
 }
 
