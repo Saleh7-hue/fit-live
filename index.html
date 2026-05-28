@@ -917,9 +917,14 @@
             <div class="nutrient-row"><span>دهون كلية / Total Fat</span><span class="badge badge-amber" id="r-fat">—</span></div>
             <div class="nutrient-row"><span>سكر / Sugar</span><span class="badge badge-pink" id="r-sugar">—</span></div>
             <div class="nutrient-row"><span>ألياف / Fiber</span><span class="badge badge-green" id="r-fiber">—</span></div>
-            <button class="btn-primary" style="width:100%;margin-top:14px;justify-content:center;" onclick="saveMealToDB()">
-              <i class="fa fa-floppy-disk"></i> حفظ في السجل / Save to Log
-            </button>
+            <div style="display:flex;gap:8px;margin-top:14px;">
+              <button class="btn-primary" style="flex:1;justify-content:center;" onclick="saveMealToDB()">
+                <i class="fa fa-floppy-disk"></i> حفظ في السجل
+              </button>
+              <button class="btn-ghost" style="flex:1;justify-content:center;" onclick="askKhalidAboutFood()">
+                <i class="fa fa-robot"></i> اسأل د. خالد
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1856,6 +1861,20 @@ function displayFoodResult(food) {
   document.getElementById('r-sugar').textContent   = food.sugar+'g';
   document.getElementById('r-fiber').textContent   = food.fiber+'g';
   document.getElementById('analysis-result').style.display='block';
+}
+
+function askKhalidAboutFood() {
+  if (!lastAnalyzed) { showToast('حلل وجبة أولاً'); return; }
+  if (!geminiApiKey) { showToast('أضف مفتاح Gemini من الإعدادات'); navTo('settings',null); return; }
+  const f = lastAnalyzed;
+  const msg = `حللت هذه الوجبة للتو: ${f.name} (${f.size})
+• السعرات: ${f.calories} kcal
+• بروتين: ${f.protein}g | كارب: ${f.carbs}g | دهون: ${f.fat}g | سكر: ${f.sugar}g | ألياف: ${f.fiber}g
+
+هل هذه الوجبة مناسبة لهدفي؟ وما رأيك في قيمتها الغذائية؟`;
+  document.getElementById('chat-input').value = msg;
+  navTo('chat', null);
+  setTimeout(sendKhalidMsg, 400);
 }
 
 /* ═══ DR. KHALID AI CHAT ══════════════════ */
