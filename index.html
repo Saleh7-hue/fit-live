@@ -541,6 +541,51 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ── PRAYER TIMES ─────────────────────────────── */
+  .prayer-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:12px; }
+  .prayer-item { background:var(--off); border-radius:10px; padding:10px 6px; text-align:center; border:1px solid var(--border); transition:all .2s; }
+  .prayer-item.current { background:var(--g-base); border-color:var(--g-base); }
+  .prayer-item.current .p-name,.prayer-item.current .p-time { color:#fff; }
+  .prayer-item.next { background:var(--g-pale); border-color:var(--g-mint); }
+  .p-name { font-size:12px; font-weight:600; color:var(--text); margin-bottom:4px; }
+  .p-time { font-size:15px; font-weight:700; color:var(--g-mid); direction:ltr; }
+  .prayer-countdown { text-align:center; margin-top:10px; font-size:13px; color:var(--muted); background:var(--g-pale); border-radius:8px; padding:8px; }
+  .prayer-countdown strong { color:var(--g-mid); }
+
+  /* ── GULF FOODS ─────────────────────────────── */
+  .gulf-search-wrap { display:flex; gap:8px; margin-bottom:14px; }
+  .gulf-search-input { flex:1; padding:9px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; background:var(--off); color:var(--text); outline:none; }
+  .gulf-search-input:focus { border-color:var(--g-mint); box-shadow:0 0 0 3px rgba(29,158,117,0.1); }
+  .gulf-cat-pills { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+  .gulf-pill { padding:5px 12px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid var(--border); background:var(--off); color:var(--muted); transition:all .2s; font-family:inherit; }
+  .gulf-pill.active { background:var(--g-base); color:#fff; border-color:var(--g-base); }
+  .gulf-foods-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; max-height:340px; overflow-y:auto; padding-left:4px; }
+  .gulf-food-card { background:var(--off); border:1px solid var(--border); border-radius:10px; padding:12px; cursor:pointer; transition:all .2s; }
+  .gulf-food-card:hover { border-color:var(--g-mint); background:var(--g-pale); transform:translateY(-1px); box-shadow:var(--shadow); }
+  .gf-name { font-size:13px; font-weight:700; margin-bottom:4px; }
+  .gf-cal { font-size:20px; font-weight:800; color:var(--g-mid); }
+  .gf-cal small { font-size:11px; font-weight:400; color:var(--muted); }
+  .gf-macros { display:flex; gap:6px; margin-top:6px; }
+  .gf-macro { font-size:10px; padding:2px 6px; border-radius:6px; font-weight:600; }
+  .gf-p { background:#e8f8f2; color:#0F6E56; }
+  .gf-c { background:#e8f3ff; color:#1a5fb4; }
+  .gf-f { background:#fff3e0; color:#b45309; }
+
+  /* ── PROGRESS CHARTS ─────────────────────────── */
+  .chart-container { position:relative; height:180px; margin-top:12px; }
+  .chart-canvas { width:100%; height:100%; }
+  .progress-stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+  .pstat { background:var(--off); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center; }
+  .pstat-val { font-size:22px; font-weight:800; color:var(--g-mid); }
+  .pstat-lbl { font-size:11px; color:var(--muted); margin-top:2px; }
+  .week-achievement { display:flex; align-items:center; gap:10px; margin-top:10px; }
+  .ach-ring { width:60px; height:60px; flex-shrink:0; }
+  .bar-chart-wrap { display:flex; align-items:flex-end; gap:6px; height:120px; padding-top:10px; }
+  .bc-bar-col { display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; }
+  .bc-bar { width:100%; border-radius:6px 6px 0 0; min-height:4px; transition:height .4s; }
+  .bc-label { font-size:10px; color:var(--muted); }
+  .bc-val { font-size:10px; font-weight:700; color:var(--text); }
+
   /* ── RESPONSIVE ─────────────────────────────── */
   @media (max-width: 768px) {
     :root { --sidebar-w: 0px; }
@@ -790,6 +835,25 @@
         </div>
       </div>
 
+      <!-- PRAYER TIMES CARD -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">
+          <div class="card-title"><i class="fa fa-mosque"></i> أوقات الصلاة / Prayer Times</div>
+          <button onclick="fetchPrayerTimes(true)" style="padding:4px 10px;background:transparent;border:1px solid var(--border);border-radius:8px;font-size:11px;cursor:pointer;color:var(--muted);font-family:inherit;">
+            <i class="fa fa-location-dot"></i> تحديث / Refresh
+          </button>
+        </div>
+        <div class="card-body" id="prayer-body">
+          <div style="text-align:center;color:var(--muted);font-size:13px;padding:12px 0;" id="prayer-loading">
+            <i class="fa fa-spinner fa-spin"></i> جاري تحديد موقعك...
+          </div>
+          <div id="prayer-content" style="display:none;">
+            <div class="prayer-grid" id="prayer-grid"></div>
+            <div class="prayer-countdown" id="prayer-countdown"></div>
+          </div>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-header"><div class="card-title"><i class="fa fa-robot"></i> نصيحة ذكية / AI Tip</div></div>
         <div class="card-body">
@@ -850,6 +914,30 @@
               <i class="fa fa-floppy-disk"></i> حفظ في السجل / Save to Log
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- GULF FOODS DATABASE -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">
+          <div class="card-title"><i class="fa fa-bowl-food"></i> قاعدة الأكل الخليجي / Gulf Food Database</div>
+        </div>
+        <div class="card-body">
+          <div class="gulf-search-wrap">
+            <input class="gulf-search-input" id="gulf-search" placeholder="ابحث عن وجبة... كبسة، مجبوس، شاورما..." oninput="filterGulfFoods()" />
+            <button class="btn-primary" onclick="filterGulfFoods()"><i class="fa fa-search"></i></button>
+          </div>
+          <div class="gulf-cat-pills" id="gulf-cat-pills">
+            <button class="gulf-pill active" onclick="setGulfCat('all',this)">الكل</button>
+            <button class="gulf-pill" onclick="setGulfCat('rice',this)">🍚 أرز</button>
+            <button class="gulf-pill" onclick="setGulfCat('meat',this)">🥩 لحوم</button>
+            <button class="gulf-pill" onclick="setGulfCat('breakfast',this)">🍳 إفطار</button>
+            <button class="gulf-pill" onclick="setGulfCat('bread',this)">🫓 خبز</button>
+            <button class="gulf-pill" onclick="setGulfCat('sweets',this)">🍮 حلويات</button>
+            <button class="gulf-pill" onclick="setGulfCat('drinks',this)">☕ مشروبات</button>
+            <button class="gulf-pill" onclick="setGulfCat('salad',this)">🥗 سلطات</button>
+          </div>
+          <div class="gulf-foods-grid" id="gulf-foods-grid"></div>
         </div>
       </div>
 
@@ -1077,18 +1165,50 @@
         </div>
       </div>
       <div class="tab-panel" id="tab-weekly">
+        <!-- Weekly stats overview -->
+        <div class="progress-stats-grid" id="weekly-stats-grid">
+          <div class="pstat"><div class="pstat-val" id="wstat-cal">—</div><div class="pstat-lbl">متوسط السعرات / Avg Calories</div></div>
+          <div class="pstat"><div class="pstat-val" id="wstat-steps">—</div><div class="pstat-lbl">متوسط الخطوات / Avg Steps</div></div>
+          <div class="pstat"><div class="pstat-val" id="wstat-meals">—</div><div class="pstat-lbl">إجمالي الوجبات / Total Meals</div></div>
+          <div class="pstat"><div class="pstat-val" id="wstat-ach">—%</div><div class="pstat-lbl">نسبة الإنجاز / Goal %</div></div>
+        </div>
+        <div class="two-col" style="margin-bottom:14px;">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="fa fa-fire" style="color:var(--coral);"></i> السعرات اليومية / Daily Calories</div></div>
+            <div class="card-body">
+              <div class="bar-chart-wrap" id="weekly-cal-chart"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="fa fa-shoe-prints" style="color:var(--blue);"></i> الخطوات اليومية / Daily Steps</div></div>
+            <div class="card-body">
+              <div class="bar-chart-wrap" id="weekly-steps-chart"></div>
+            </div>
+          </div>
+        </div>
         <div class="card">
-          <div class="card-header"><div class="card-title"><i class="fa fa-chart-bar"></i> ملخص الأسبوع</div></div>
-          <div class="card-body">
-            <p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0;">سيتم إضافة التقارير الأسبوعية قريباً · Weekly reports coming soon</p>
+          <div class="card-header"><div class="card-title"><i class="fa fa-weight-scale" style="color:var(--g-mid);"></i> تطور الوزن / Weight Trend</div></div>
+          <div class="card-body" id="weight-trend-body">
+            <p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0;" id="weight-trend-empty">سجّل وزنك بانتظام لرؤية منحنى التطور</p>
+            <div class="bar-chart-wrap" id="weekly-weight-chart" style="display:none;height:140px;"></div>
           </div>
         </div>
       </div>
       <div class="tab-panel" id="tab-monthly">
+        <div class="progress-stats-grid" id="monthly-stats-grid">
+          <div class="pstat"><div class="pstat-val" id="mstat-cal">—</div><div class="pstat-lbl">إجمالي السعرات / Total Cal</div></div>
+          <div class="pstat"><div class="pstat-val" id="mstat-steps">—</div><div class="pstat-lbl">إجمالي الخطوات / Total Steps</div></div>
+          <div class="pstat"><div class="pstat-val" id="mstat-meals">—</div><div class="pstat-lbl">عدد الوجبات / Meals Logged</div></div>
+          <div class="pstat"><div class="pstat-val" id="mstat-streak">—</div><div class="pstat-lbl">أيام متتالية / Day Streak</div></div>
+        </div>
         <div class="card">
-          <div class="card-header"><div class="card-title"><i class="fa fa-calendar-days"></i> إحصائيات الشهر</div></div>
+          <div class="card-header"><div class="card-title"><i class="fa fa-chart-line"></i> السعرات / الخطوات — آخر 30 يوم</div></div>
           <div class="card-body">
-            <p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0;">سيتم إضافة التقارير الشهرية قريباً · Monthly reports coming soon</p>
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+              <button class="gulf-pill active" id="m30-cal-btn" onclick="show30Chart('cal',this)">السعرات</button>
+              <button class="gulf-pill" id="m30-steps-btn" onclick="show30Chart('steps',this)">الخطوات</button>
+            </div>
+            <div class="bar-chart-wrap" id="monthly-chart" style="height:150px;overflow-x:auto;flex-wrap:nowrap;gap:3px;"></div>
           </div>
         </div>
       </div>
@@ -2045,7 +2165,10 @@ function navTo(id, el) {
   window.scrollTo(0,0);
   document.getElementById('sidebar').classList.remove('open');
   // Page-specific on-open actions
-  if (id === 'steps') setTimeout(loadStepHistory, 200);
+  if (id === 'steps')     setTimeout(loadStepHistory, 200);
+  if (id === 'dashboard') setTimeout(() => { fetchPrayerTimes(false); startPrayerCountdown(); }, 200);
+  if (id === 'reports')   setTimeout(loadReportsPage, 200);
+  if (id === 'food')      setTimeout(renderGulfFoodsGrid, 100);
 }
 
 /* ── TABS ─────────────────────────────────── */
@@ -2082,6 +2205,9 @@ function showToast(msg) {
 
 /* ── ERROR HELPERS ────────────────────────── */
 function showAuthError(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
+
+/* ── ERROR HELPERS ────────────────────────── */
+function showAuthError(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
 function hideAuthError(id){document.getElementById(id).style.display='none';}
 function getFirebaseError(code) {
   const m={'auth/user-not-found':'البريد غير مسجل','auth/wrong-password':'كلمة المرور غير صحيحة','auth/invalid-email':'البريد غير صالح','auth/email-already-in-use':'البريد مسجل مسبقاً','auth/weak-password':'كلمة المرور ضعيفة','auth/too-many-requests':'محاولات كثيرة — انتظر','auth/network-request-failed':'خطأ في الشبكة','auth/invalid-credential':'بيانات غير صحيحة'};
@@ -2100,461 +2226,584 @@ function goalLabel(goal) {
   return m[goal]||'📉 دايت';
 }
 
-
 /* ═══════════════════════════════════════════════
    WEEKLY PLANS SYSTEM — DR. KHALID
-   نظام الخطط الأسبوعية التلقائية
 ═══════════════════════════════════════════════ */
-
 function getWeekNumber(d) {
   d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
   return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
 }
-
 function calcTDEE(weight, height, age, gender, goal) {
-  // Mifflin-St Jeor BMR
   const bmr = gender === 'female'
     ? 10*weight + 6.25*height - 5*age - 161
     : 10*weight + 6.25*height - 5*age + 5;
-  // Moderate activity × 1.55
   const tdee = Math.round(bmr * 1.55);
   const adj = {lose:-500, strict:-800, cut:-300, bulk:+400, healthygain:+300};
   return Math.max(1200, tdee + (adj[goal]||0));
 }
-
-async function checkAndGeneratePlans(forceRegen) {
-  if (!currentUser || !geminiApiKey) {
-    renderNoApiKeyMessage();
-    return;
-  }
-  const uid      = currentUser.uid;
-  const goal     = userProfile.goal || 'lose';
-  const weekNum  = getWeekNumber(new Date());
-  const year     = new Date().getFullYear();
-
-  // Show loading
-  setNutritionLoading(true);
-  setTrainingLoading(true);
-
-  try {
-    // Check Firestore for existing plans
-    const npRef = db.collection('users').doc(uid).collection('plans').doc('nutrition');
-    const tpRef = db.collection('users').doc(uid).collection('plans').doc('training');
-    const [npSnap, tpSnap] = await Promise.all([npRef.get(), tpRef.get()]);
-
-    const npData = npSnap.exists ? npSnap.data() : null;
-    const tpData = tpSnap.exists ? tpSnap.data() : null;
-
-    const npStale = !npData || npData.goal !== goal || npData.weekNum !== weekNum || npData.year !== year || forceRegen;
-    const tpStale = !tpData || tpData.goal !== goal || tpData.weekNum !== weekNum || tpData.year !== year || forceRegen;
-
-    // Generate what's needed
-    if (npStale) {
-      await generateAndSaveNutritionPlan(uid, goal, weekNum, year);
-    } else {
-      renderNutritionPlan(JSON.parse(npData.content), goal);
-    }
-
-    if (tpStale) {
-      await generateAndSaveTrainingPlan(uid, goal, weekNum, year);
-    } else {
-      renderTrainingPlan(JSON.parse(tpData.content), goal);
-    }
-
-  } catch(e) {
-    console.error('Plans error:', e);
-    showToast('خطأ في الخطط: ' + e.message);
-    setNutritionLoading(false);
-    setTrainingLoading(false);
-  }
+function setNutritionLoading(on) {
+  const loading = document.getElementById('np-loading');
+  const tabs    = document.getElementById('np-tabs');
+  if(on){ if(loading){loading.style.display='block';loading.innerHTML='<i class="fa fa-spinner fa-spin fa-2x" style="color:var(--g-base);margin-bottom:10px;display:block;"></i><p>د. خالد يصمم خطتك الغذائية...</p>';} if(tabs) tabs.style.display='none'; }
+  else  { if(loading) loading.style.display='none'; }
 }
-
-async function generateAndSaveNutritionPlan(uid, goal, weekNum, year) {
-  const w   = userProfile.weight || 75;
-  const h   = userProfile.height || 175;
-  const age = userProfile.age    || 25;
-  const gen = userProfile.gender || 'male';
-  const kcal = calcTDEE(w, h, age, gen, goal);
-  const goalNames = {lose:'دايت - خسارة تدريجية',strict:'دايت قاسي - خسارة سريعة',cut:'تنشيف - إظهار العضل',bulk:'تضخيم - بناء العضل',healthygain:'تسمين صحي'};
-
-  const prompt = 'انت د. خالد خبير تغذية علاجية بخبرة 20 عاما. ' +
-    'المستخدم: وزن '+w+'كجم، طول '+h+'سم، عمر '+age+' سنة، جنس '+(gen==='female'?'انثى':'ذكر')+'. ' +
-    'الهدف: '+(goalNames[goal]||goal)+'. ' +
-    'السعرات اليومية المستهدفة: '+kcal+' سعرة. ' +
-    'صمم خطة غذائية متنوعة لاسبوع كامل (7 ايام). اجعل وجبات كل يوم مختلفة عن بقية الايام. ' +
-    'اجب بـ JSON فقط بدون اي نص خارجه: ' +
-    '{"dailyCalories":'+kcal+',"goal":"'+goal+'","weeklyNote":"ملاحظة قصيرة من د. خالد عن هذا البرنامج","macros":{"protein":0,"carbs":0,"fat":0},' +
-    '"days":[{"day":"الاثنين","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},' +
-    '{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},' +
-    '{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},' +
-    '{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0},' +
-    'نفس البنية لـ الثلاثاء والاربعاء والخميس والجمعة والسبت والاحد]}';
-
-  const raw = await callGemini(prompt);
-  const json = raw.replace(/```json\n?|\n?```/g,'').trim();
-  const data = JSON.parse(json);
-
-  // Save to Firestore
-  await db.collection('users').doc(uid).collection('plans').doc('nutrition').set({
-    goal, weekNum, year, content: JSON.stringify(data),
-    generatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  renderNutritionPlan(data, goal);
+function setTrainingLoading(on) {
+  const tpEl = document.getElementById('tp-loading');
+  if(tpEl) { tpEl.style.display = on ? 'block' : 'none'; tpEl.innerHTML = on ? '<i class="fa fa-spinner fa-spin" style="color:var(--g-base);"></i> د. خالد يصمم برنامجك التدريبي...' : ''; }
 }
-
-async function generateAndSaveTrainingPlan(uid, goal, weekNum, year) {
-  const w   = userProfile.weight || 75;
-  const h   = userProfile.height || 175;
-  const age = userProfile.age    || 25;
-  const inj = userProfile.injuries || 'لا توجد';
-  const goalNames = {lose:'دايت - حرق دهون',strict:'دايت قاسي - حرق مكثف',cut:'تنشيف - إظهار العضل',bulk:'تضخيم - بناء كتلة عضلية',healthygain:'تسمين صحي - تضخيم خفيف'};
-
-  const prompt = 'انت د. خالد مدرب كمال اجسام بخبرة 20 عاما. ' +
-    'المستخدم: وزن '+w+'كجم، طول '+h+'سم، عمر '+age+' سنة. ' +
-    'الهدف: '+(goalNames[goal]||goal)+'. الاصابات: '+inj+'. ' +
-    'صمم برنامج تدريبي اسبوعي (7 ايام) متنوع ومتدرج. تجنب التمارين التي تؤثر على منطقة الاصابة. ' +
-    'اجب بـ JSON فقط: ' +
-    '{"goal":"'+goal+'","weeklyNote":"ملاحظة تدريبية",' +
-    '"days":[{"day":"الاثنين","type":"قوة","focus":"الصدر والاكتاف","duration":"60 دقيقة","icon":"🏋️",' +
-    '"exercises":[{"name":"اسم التمرين","sets":4,"reps":"10-12","rest":"90 ث","notes":"ملاحظة"}]},' +
-    'نفس البنية لـ الثلاثاء والاربعاء والخميس والجمعة والسبت والاحد. ' +
-    'يوم او يومين راحة نشطة مع تمارين خفيفة او تمدد]}';
-
-  const raw = await callGemini(prompt);
-  const json = raw.replace(/```json\n?|\n?```/g,'').trim();
-  const data = JSON.parse(json);
-
-  await db.collection('users').doc(uid).collection('plans').doc('training').set({
-    goal, weekNum, year, content: JSON.stringify(data),
-    generatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  renderTrainingPlan(data, goal);
-}
-
-/* ── RENDER NUTRITION PLAN ──────────────── */
-let activeNpDay = 0;
-let currentNpData = null;
-
-function renderNutritionPlan(data, goal) {
-  currentNpData = data;
-  setNutritionLoading(false);
-  const goalNames = {lose:'📉 دايت',strict:'⚡ دايت قاسي',cut:'✂️ تنشيف',bulk:'💪 تضخيم',healthygain:'🌱 تسمين صحي'};
-
-  const badge = document.getElementById('np-goal-badge');
-  if (badge) badge.textContent = goalNames[goal]||goal;
-
-  const weekBadge = document.getElementById('np-week-badge');
-  if (weekBadge) weekBadge.textContent = 'الأسبوع ' + getWeekNumber(new Date());
-
-  const tabs = document.getElementById('np-day-tabs');
-  const cont = document.getElementById('np-day-content');
-  const wrap = document.getElementById('np-tabs');
-  if (!tabs||!cont||!wrap) return;
-  wrap.style.display='block';
-
-  const dayAbbr = ['إث','ث','أر','خم','ج','سب','أح'];
-  tabs.innerHTML = '';
-  if (data.days) {
-    data.days.forEach((d,i) => {
-      const btn = document.createElement('button');
-      btn.className = 'np-day-tab' + (i===0?' active':'');
-      btn.style.cssText = 'padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:'+(i===0?'var(--g-base)':'var(--off)')+';color:'+(i===0?'#fff':'var(--text)')+';font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s;';
-      btn.textContent = (dayAbbr[i]||d.day);
-      btn.onclick = () => { activeNpDay=i; renderNpDay(data,i); updateNpTabs(i,data.days.length); };
-      tabs.appendChild(btn);
-    });
-  }
-
-  // Macros summary
-  const ms = document.getElementById('np-macros-summary');
-  if (ms && data.macros) {
-    ms.innerHTML = '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">' +
-      '<span style="font-weight:700;color:var(--g-mid);">يومياً:</span>' +
-      '<span><i class="fa fa-fire" style="color:var(--coral);"></i> ' + data.dailyCalories + ' سعرة</span>' +
-      '<span style="color:var(--g-mid);">بروتين: ' + data.macros.protein + 'g</span>' +
-      '<span style="color:var(--blue);">كارب: ' + data.macros.carbs + 'g</span>' +
-      '<span style="color:var(--amber);">دهون: ' + data.macros.fat + 'g</span>' +
-      '</div>' +
-      (data.weeklyNote ? '<p style="margin-top:8px;font-size:12px;color:var(--g-mid);font-style:italic;">💡 ' + data.weeklyNote + '</p>' : '');
-  }
-
-  renderNpDay(data, 0);
-}
-
-function updateNpTabs(activeIdx, total) {
-  const tabs = document.querySelectorAll('#np-day-tabs button');
-  tabs.forEach((b,i) => {
-    b.style.background = i===activeIdx ? 'var(--g-base)' : 'var(--off)';
-    b.style.color      = i===activeIdx ? '#fff' : 'var(--text)';
-    b.style.borderColor= i===activeIdx ? 'var(--g-base)' : 'var(--border)';
-  });
-}
-
-function renderNpDay(data, idx) {
-  const cont = document.getElementById('np-day-content');
-  if (!cont || !data.days) return;
-  const day = data.days[idx];
-  if (!day) return;
-
-  const mealColors = {إفطار:'var(--amber)',غداء:'var(--g-base)',عشاء:'var(--blue)',سناك:'var(--pink)'};
-  let html = '<div style="font-weight:700;color:var(--g-dark);margin-bottom:12px;font-size:15px;">' + day.day + '</div>';
-  if (day.meals) {
-    day.meals.forEach(m => {
-      const color = mealColors[m.type] || 'var(--muted)';
-      html += '<div style="padding:12px;background:var(--off);border-radius:10px;margin-bottom:10px;border-right:3px solid '+color+';">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
-        '<div><span style="font-size:11px;color:'+color+';font-weight:700;background:'+color+'22;padding:2px 8px;border-radius:20px;">'+m.type+'</span>' +
-        '<span style="font-weight:600;margin-right:8px;font-size:14px;">'+m.name+'</span></div>' +
-        '<span style="font-size:13px;font-weight:700;color:var(--coral);">'+m.calories+' kcal</span></div>' +
-        '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">'+m.details+'</div>' +
-        '<div style="display:flex;gap:10px;font-size:11px;">' +
-        '<span style="color:var(--g-mid);">P: '+m.protein+'g</span>' +
-        '<span style="color:var(--blue);">C: '+m.carbs+'g</span>' +
-        '<span style="color:var(--amber);">F: '+m.fat+'g</span></div></div>';
-    });
-  }
-  if (day.totalCalories) {
-    html += '<div style="text-align:left;padding:8px 12px;background:var(--g-pale);border-radius:8px;font-size:13px;font-weight:700;color:var(--g-mid);">المجموع: '+day.totalCalories+' سعرة</div>';
-  }
-  cont.innerHTML = html;
-}
-
-/* ── RENDER TRAINING PLAN ──────────────── */
-let activeTPDay = 0;
-let currentTPData = null;
-
-function renderTrainingPlan(data, goal) {
-  currentTPData = data;
-  setTrainingLoading(false);
-
-  const tabs = document.getElementById('tp-day-tabs');
-  const cont = document.getElementById('tp-day-content');
-  const wrap = document.getElementById('tp-week-grid');
-  if (!tabs||!cont||!wrap) return;
-  wrap.style.display='block';
-  const loadEl = document.getElementById('tp-loading');
-  if (loadEl) loadEl.style.display='none';
-
-  const dayAbbr = ['إث','ث','أر','خم','ج','سب','أح'];
-  tabs.innerHTML = '';
-  if (data.days) {
-    data.days.forEach((d,i) => {
-      const isRest = d.type && (d.type.includes('راحة')||d.type.includes('rest'));
-      const btn = document.createElement('button');
-      btn.style.cssText='padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:'+(i===0?'var(--g-base)':'var(--off)')+';color:'+(i===0?'#fff':'var(--text)')+';font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s;';
-      btn.textContent=(dayAbbr[i]||d.day)+(isRest?' 😴':'');
-      btn.onclick=()=>{activeTPDay=i;renderTPDay(data,i);updateTPTabs(i,data.days.length);};
-      tabs.appendChild(btn);
-    });
-  }
-
-  if (data.weeklyNote) {
-    const note = document.createElement('div');
-    note.style.cssText='font-size:12px;color:var(--g-mid);font-style:italic;margin-bottom:10px;padding:8px 12px;background:var(--g-pale);border-radius:8px;';
-    note.innerHTML='💡 ' + data.weeklyNote;
-    cont.before(note);
-  }
-
-  renderTPDay(data, 0);
-}
-
-function updateTPTabs(activeIdx, total) {
-  const tabs = document.querySelectorAll('#tp-day-tabs button');
-  tabs.forEach((b,i)=>{
-    b.style.background = i===activeIdx ? 'var(--g-base)' : 'var(--off)';
-    b.style.color      = i===activeIdx ? '#fff' : 'var(--text)';
-    b.style.borderColor= i===activeIdx ? 'var(--g-base)' : 'var(--border)';
-  });
-}
-
-function renderTPDay(data, idx) {
-  const cont = document.getElementById('tp-day-content');
-  if (!cont || !data.days) return;
-  const day = data.days[idx];
-  if (!day) return;
-
-  const isRest = day.type && (day.type.includes('راحة')||day.type.includes('rest'));
-  let html = '<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">' +
-    '<span style="font-size:22px;">' + (day.icon||'🏋️') + '</span>' +
-    '<div><div style="font-weight:700;font-size:16px;">' + day.day + ' — ' + day.focus + '</div>' +
-    '<div style="font-size:12px;color:var(--muted);">' + (day.type||'') + (day.duration?' · '+day.duration:'') + '</div></div></div>';
-
-  if (isRest || !day.exercises || day.exercises.length===0) {
-    html += '<div style="text-align:center;padding:24px;color:var(--muted);background:var(--off);border-radius:10px;">😴 يوم راحة نشطة<br><small>تمدد خفيف · مشي · تنفس</small></div>';
-  } else {
-    day.exercises.forEach((ex,i) => {
-      html += '<div style="padding:12px;background:var(--off);border-radius:10px;margin-bottom:8px;border-right:3px solid var(--g-base);">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
-        '<div style="font-weight:700;font-size:14px;">' + (i+1) + '. ' + ex.name + '</div>' +
-        '<div style="display:flex;gap:6px;">' +
-        '<span style="background:var(--g-pale);color:var(--g-mid);padding:2px 8px;border-radius:20px;font-size:12px;font-weight:600;">' + ex.sets + ' سيت</span>' +
-        '<span style="background:#E6F1FB;color:var(--blue);padding:2px 8px;border-radius:20px;font-size:12px;font-weight:600;">' + ex.reps + ' تكرار</span></div></div>' +
-        '<div style="display:flex;gap:16px;font-size:12px;color:var(--muted);">' +
-        '<span><i class="fa fa-clock"></i> راحة: ' + ex.rest + '</span>' +
-        (ex.notes ? '<span>' + ex.notes + '</span>' : '') + '</div></div>';
-    });
-  }
-  cont.innerHTML = html;
-}
-
-/* ── HELPER STATES ──────────────────────── */
-function setNutritionLoading(loading) {
-  const loadEl = document.getElementById('np-loading');
-  const tabsEl = document.getElementById('np-tabs');
-  if (loading) {
-    if (loadEl) { loadEl.style.display='block'; loadEl.innerHTML='<i class="fa fa-spinner fa-spin fa-2x" style="color:var(--g-base);margin-bottom:10px;display:block;"></i><p>د. خالد يصمم خطتك الغذائية...</p>'; }
-    if (tabsEl) tabsEl.style.display='none';
-  } else {
-    if (loadEl) loadEl.style.display='none';
-  }
-}
-
-function setTrainingLoading(loading) {
-  const loadEl = document.getElementById('tp-loading');
-  const wrapEl = document.getElementById('tp-week-grid');
-  if (loadEl) loadEl.style.display = loading ? 'block' : 'none';
-}
-
 function renderNoApiKeyMessage() {
   const npEl = document.getElementById('np-loading');
-  if (npEl) {
-    npEl.style.display = 'block';
+  if(npEl) {
+    npEl.style.display='block';
     npEl.innerHTML = '<i class="fa fa-robot fa-2x" style="color:var(--g-base);margin-bottom:10px;display:block;"></i>' +
       '<p>أضف <a href="#" id="go-settings-link" style="color:var(--g-base);">مفتاح Gemini</a> من الإعدادات ليقوم د. خالد بتوليد خطتك الغذائية والتدريبية تلقائياً</p>';
     const lnk = document.getElementById('go-settings-link');
-    if (lnk) lnk.onclick = function(){ navTo('settings', null); return false; };
+    if(lnk) lnk.onclick = function(){ navTo('settings', null); return false; };
   }
   const tpEl = document.getElementById('tp-loading');
-  if (tpEl) {
-    tpEl.style.display = 'block';
-    tpEl.innerHTML = '<i class="fa fa-robot" style="color:var(--g-base);"></i> أضف مفتاح Gemini لتوليد البرنامج التدريبي';
+  if(tpEl) { tpEl.style.display='block'; tpEl.innerHTML='<i class="fa fa-robot" style="color:var(--g-base);"></i> أضف مفتاح Gemini لتوليد البرنامج التدريبي'; }
+}
+function regeneratePlans(force){ checkAndGeneratePlans(force); }
+
+async function checkAndGeneratePlans(forceRegen) {
+  if(!currentUser || !geminiApiKey){ renderNoApiKeyMessage(); return; }
+  const uid=currentUser.uid, goal=userProfile.goal||'lose', weekNum=getWeekNumber(new Date()), year=new Date().getFullYear();
+  setNutritionLoading(true); setTrainingLoading(true);
+  try {
+    const npRef=db.collection('users').doc(uid).collection('plans').doc('nutrition');
+    const tpRef=db.collection('users').doc(uid).collection('plans').doc('training');
+    const [npSnap,tpSnap]=await Promise.all([npRef.get(),tpRef.get()]);
+    const npData=npSnap.exists?npSnap.data():null, tpData=tpSnap.exists?tpSnap.data():null;
+    const npStale=!npData||npData.goal!==goal||npData.weekNum!==weekNum||npData.year!==year||forceRegen;
+    const tpStale=!tpData||tpData.goal!==goal||tpData.weekNum!==weekNum||tpData.year!==year||forceRegen;
+    if(npStale) await generateAndSaveNutritionPlan(uid,goal,weekNum,year);
+    else renderNutritionPlan(JSON.parse(npData.content),goal);
+    if(tpStale) await generateAndSaveTrainingPlan(uid,goal,weekNum,year);
+    else renderTrainingPlan(JSON.parse(tpData.content),goal);
+  } catch(e){ console.error('Plans error:',e); showToast('خطأ في الخطط: '+e.message); setNutritionLoading(false); setTrainingLoading(false); }
+}
+
+async function generateAndSaveNutritionPlan(uid,goal,weekNum,year) {
+  const w=userProfile.weight||75,h=userProfile.height||175,age=userProfile.age||25,gen=userProfile.gender||'male';
+  const kcal=calcTDEE(w,h,age,gen,goal);
+  const goalNames={lose:'دايت - خسارة تدريجية',strict:'دايت قاسي - خسارة سريعة',cut:'تنشيف - إظهار العضل',bulk:'تضخيم - بناء العضل',healthygain:'تسمين صحي'};
+  const prompt='انت د. خالد خبير تغذية علاجية بخبرة 20 عاما. المستخدم: وزن '+w+'كجم، طول '+h+'سم، عمر '+age+' سنة. الهدف: '+(goalNames[goal]||goal)+'. السعرات اليومية: '+kcal+' سعرة. صمم خطة غذائية لأسبوع كامل. أجب بـ JSON فقط: {"dailyCalories":'+kcal+',"goal":"'+goal+'","weeklyNote":"ملاحظة قصيرة","macros":{"protein":0,"carbs":0,"fat":0},"days":[{"day":"الاثنين","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0},{"day":"الثلاثاء","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0},{"day":"الأربعاء","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0},{"day":"الخميس","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0},{"day":"الجمعة","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0},{"day":"السبت","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0},{"day":"الأحد","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0}]}';
+  const raw=await callGemini(prompt);
+  const data=JSON.parse(raw.replace(/```json\n?|\n?```/g,'').trim());
+  await db.collection('users').doc(uid).collection('plans').doc('nutrition').set({goal,weekNum,year,content:JSON.stringify(data),generatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  renderNutritionPlan(data,goal);
+}
+
+async function generateAndSaveTrainingPlan(uid,goal,weekNum,year) {
+  const w=userProfile.weight||75,h=userProfile.height||175,age=userProfile.age||25,inj=userProfile.injuries||'لا توجد';
+  const goalNames={lose:'دايت - حرق دهون',strict:'دايت قاسي - حرق مكثف',cut:'تنشيف - إظهار العضل',bulk:'تضخيم - بناء كتلة عضلية',healthygain:'تسمين صحي - تضخيم خفيف'};
+  const prompt='انت د. خالد مدرب كمال اجسام بخبرة 20 عاما. المستخدم: وزن '+w+'كجم، طول '+h+'سم، عمر '+age+' سنة. الهدف: '+(goalNames[goal]||goal)+'. الاصابات: '+inj+'. صمم برنامج تدريبي أسبوعي (7 أيام). اجب بـ JSON فقط: {"goal":"'+goal+'","weeklyNote":"ملاحظة تدريبية","days":[{"day":"الاثنين","type":"قوة","focus":"الصدر والأكتاف","duration":"60 دقيقة","icon":"🏋️","exercises":[{"name":"اسم التمرين","sets":4,"reps":"10-12","rest":"90 ث","notes":"ملاحظة"}]},{"day":"الثلاثاء","type":"كارديو","focus":"حرق دهون","duration":"45 دقيقة","icon":"🏃","exercises":[{"name":"اسم","sets":3,"reps":"15-20","rest":"60 ث","notes":""}]},{"day":"الأربعاء","type":"راحة نشطة","focus":"تمدد وتعافي","duration":"30 دقيقة","icon":"🧘","exercises":[{"name":"تمدد عام","sets":1,"reps":"5 دقائق","rest":"0","notes":""}]},{"day":"الخميس","type":"قوة","focus":"الظهر والبطن","duration":"60 دقيقة","icon":"🏋️","exercises":[{"name":"اسم","sets":4,"reps":"10-12","rest":"90 ث","notes":""}]},{"day":"الجمعة","type":"كارديو","focus":"حرق دهون","duration":"45 دقيقة","icon":"🚴","exercises":[{"name":"اسم","sets":3,"reps":"20 دقيقة","rest":"0","notes":""}]},{"day":"السبت","type":"قوة","focus":"الأرجل","duration":"60 دقيقة","icon":"🏋️","exercises":[{"name":"اسم","sets":4,"reps":"12-15","rest":"90 ث","notes":""}]},{"day":"الأحد","type":"راحة","focus":"استشفاء كامل","duration":"0","icon":"😴","exercises":[]}]}';
+  const raw=await callGemini(prompt);
+  const data=JSON.parse(raw.replace(/```json\n?|\n?```/g,'').trim());
+  await db.collection('users').doc(uid).collection('plans').doc('training').set({goal,weekNum,year,content:JSON.stringify(data),generatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  renderTrainingPlan(data,goal);
+}
+
+/* ── RENDER NUTRITION PLAN ──────────────── */
+let activeNpDay=0, currentNpData=null;
+function renderNutritionPlan(data,goal) {
+  currentNpData=data; setNutritionLoading(false);
+  const goalNames={lose:'📉 دايت',strict:'⚡ دايت قاسي',cut:'✂️ تنشيف',bulk:'💪 تضخيم',healthygain:'🌱 تسمين صحي'};
+  const badge=document.getElementById('np-goal-badge'); if(badge) badge.textContent=goalNames[goal]||goal;
+  const weekBadge=document.getElementById('np-week-badge'); if(weekBadge) weekBadge.textContent='الأسبوع '+getWeekNumber(new Date());
+  const tabs=document.getElementById('np-day-tabs'),cont=document.getElementById('np-day-content'),wrap=document.getElementById('np-tabs');
+  if(!tabs||!cont||!wrap) return;
+  wrap.style.display='block';
+  const dayAbbr=['إث','ث','أر','خم','ج','سب','أح'];
+  tabs.innerHTML='';
+  if(data.days) data.days.forEach((d,i)=>{
+    const btn=document.createElement('button');
+    btn.style.cssText='padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);background:'+(i===activeNpDay?'var(--g-base)':'var(--off)')+';color:'+(i===activeNpDay?'#fff':'var(--text)')+';font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;';
+    btn.textContent=dayAbbr[i]||d.day;
+    btn.onclick=()=>{activeNpDay=i;renderNutritionPlan(data,goal);};
+    tabs.appendChild(btn);
+  });
+  const day=data.days?.[activeNpDay]; if(!day) return;
+  let html='<div style="font-size:13px;color:var(--muted);margin-bottom:12px;">'+day.day+' — '+(day.totalCalories||'—')+' سعرة</div>';
+  if(day.meals) day.meals.forEach(m=>{
+    html+='<div style="background:var(--off);border-radius:10px;padding:12px;margin-bottom:10px;border:1px solid var(--border);"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="font-weight:700;font-size:14px;">'+m.name+'</span><span class="badge badge-green">'+m.calories+' kcal</span></div><div style="font-size:12px;color:var(--muted);margin-bottom:6px;">'+m.type+' — '+m.details+'</div><div style="display:flex;gap:8px;font-size:11px;"><span style="background:#e8f8f2;color:#0F6E56;padding:2px 7px;border-radius:6px;">P:'+m.protein+'g</span><span style="background:#e8f3ff;color:#1a5fb4;padding:2px 7px;border-radius:6px;">C:'+m.carbs+'g</span><span style="background:#fff3e0;color:#b45309;padding:2px 7px;border-radius:6px;">F:'+m.fat+'g</span></div></div>';
+  });
+  cont.innerHTML=html;
+  const ms=document.getElementById('np-macros-summary');
+  if(ms&&data.weeklyNote) ms.innerHTML='<i class="fa fa-comment-medical" style="color:var(--g-mid);margin-left:8px;"></i>'+data.weeklyNote;
+}
+
+/* ── RENDER TRAINING PLAN ──────────────── */
+let activeTrainDay=0, currentTrainData=null;
+function renderTrainingPlan(data,goal) {
+  currentTrainData=data; setTrainingLoading(false);
+  let out=document.getElementById('training-plan-output');
+  if(!out){out=document.createElement('div');out.id='training-plan-output';const pg=document.getElementById('pg-exercise');if(pg)pg.prepend(out);}
+  out.style.cssText='background:var(--card);border-radius:14px;padding:18px;margin-bottom:16px;border:1px solid var(--border);display:block;';
+  const dayAbbr=['إث','ث','أر','خم','ج','سب','أح'];
+  let tabHtml='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div style="font-weight:700;color:var(--g-mid);font-size:15px;"><i class="fa fa-robot"></i> برنامجك التدريبي — د. خالد</div><div style="display:flex;gap:4px;flex-wrap:wrap;" id="tp-day-tabs"></div></div>';
+  out.innerHTML=tabHtml;
+  const tabsCont=document.getElementById('tp-day-tabs');
+  const dayArea=document.createElement('div');dayArea.id='tp-day-content';out.appendChild(dayArea);
+  if(data.weeklyNote){const n=document.createElement('div');n.style.cssText='margin-top:12px;padding:10px 14px;background:var(--g-pale);border-radius:10px;font-size:13px;color:var(--g-mid);';n.innerHTML='<i class="fa fa-comment-medical"></i> '+data.weeklyNote;out.appendChild(n);}
+  function renderDay(i){
+    const d=data.days?.[i]; if(!d)return;
+    let h='<div style="margin-bottom:10px;"><span style="font-size:15px;">'+d.icon+' '+d.day+'</span> <span style="font-size:12px;color:var(--muted);">— '+d.focus+' ('+d.duration+')</span></div>';
+    if(d.type==='راحة'||d.type==='راحة كاملة'){h+='<p style="text-align:center;padding:20px;color:var(--muted);">😴 يوم راحة — الاستشفاء جزء من التقدم</p>';}
+    else if(d.exercises&&d.exercises.length){
+      d.exercises.forEach(ex=>{h+='<div style="background:var(--off);border-radius:10px;padding:10px 14px;margin-bottom:8px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;"><div><div style="font-weight:700;font-size:13px;">'+ex.name+'</div>'+(ex.notes?'<div style="font-size:11px;color:var(--muted);">'+ex.notes+'</div>':'')+'</div><div style="text-align:center;font-size:12px;"><div style="font-weight:700;">'+ex.sets+' × '+ex.reps+'</div><div style="color:var(--muted);">راحة: '+ex.rest+'</div></div></div>';});
+    }
+    dayArea.innerHTML=h;
+    if(tabsCont) tabsCont.querySelectorAll('button').forEach((b,bi)=>b.style.background=bi===i?'var(--g-base)':'var(--off)');
   }
+  if(tabsCont&&data.days){
+    data.days.forEach((d,i)=>{
+      const b=document.createElement('button');
+      b.style.cssText='padding:5px 10px;border-radius:8px;border:1.5px solid var(--border);background:'+(i===0?'var(--g-base)':'var(--off)')+';color:'+(i===0?'#fff':'var(--text)')+';font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;';
+      b.textContent=dayAbbr[i]||d.day;
+      b.onclick=()=>renderDay(i);
+      tabsCont.appendChild(b);
+    });
+  }
+  renderDay(0);
 }
 
-async function regeneratePlans(force) {
-  await checkAndGeneratePlans(force||false);
-  showToast('✅ تم تجديد الخطط');
-}
-
-/* ═══ EXERCISE LIBRARY ═══════════════════════ */
+/* ═══ EXERCISE LIBRARY ═══════════════════ */
 const EX_LIBRARY = {
-  strength: {
-    icon: '💪', title: 'تمارين القوة والعضلات', sub: 'Strength Training — 12 تمرين',
-    exercises: [
-      { name:'سكوات / Squat', sets:'4×12', rest:'60s', muscle:'الأرجل والمؤخرة', level:'متوسط', tip:'ظهرك مستقيم، ركبتك لا تتجاوز أصابع قدمك' },
-      { name:'ضغط (بنش) / Bench Press', sets:'4×10', rest:'90s', muscle:'الصدر والكتف', level:'متوسط', tip:'قبضتك أعرض من كتفيك' },
-      { name:'شد علوي / Pull-Up', sets:'4×8', rest:'90s', muscle:'الظهر والبايسبس', level:'صعب', tip:'شد الكوعين للأسفل لتحريك الظهر لا الذراعين' },
-      { name:'ديدليفت / Deadlift', sets:'3×8', rest:'120s', muscle:'الظهر والأرجل', level:'صعب', tip:'الوزن قريب من جسمك طول الوقت' },
-      { name:'ضغط أكتاف / Shoulder Press', sets:'3×12', rest:'60s', muscle:'الأكتاف', level:'متوسط', tip:'لا ترفع الكتفين أثناء الضغط' },
-      { name:'تمرين صف / Bent-Over Row', sets:'4×10', rest:'60s', muscle:'الظهر', level:'متوسط', tip:'ظهرك مسطح، اسحب إلى البطن' },
-      { name:'دمبل كيرل / Dumbbell Curl', sets:'3×15', rest:'45s', muscle:'البايسبس', level:'سهل', tip:'لا تتأرجح الجذع' },
-      { name:'دفع كوع / Tricep Dip', sets:'3×15', rest:'45s', muscle:'التراياسبس', level:'سهل', tip:'المرفقان يشيران للخلف لا للخارج' },
-      { name:'بلانك / Plank', sets:'3×60s', rest:'45s', muscle:'البطن والأساس', level:'متوسط', tip:'الحوض مستوٍ، لا ارتفاع ولا انخفاض' },
-      { name:'لانجز / Lunges', sets:'3×12 لكل ساق', rest:'60s', muscle:'الأرجل', level:'سهل', tip:'الركبة الأمامية لا تتجاوز القدم' },
-      { name:'ضغط أرضي / Push-Up', sets:'4×15', rest:'45s', muscle:'الصدر والكتف', level:'سهل', tip:'جسمك خط مستقيم من الرأس للكعب' },
-      { name:'كيبل روتيشن / Cable Rotation', sets:'3×15', rest:'45s', muscle:'البطن الجانبي', level:'متوسط', tip:'حرك من الأساس لا من الذراعين' },
-    ]
-  },
-  cardio: {
-    icon: '🏃', title: 'تمارين الكارديو', sub: 'Cardio — 8 تمارين',
-    exercises: [
-      { name:'جري متقطع / HIIT Sprints', sets:'8×30s جري + 30s راحة', rest:'—', muscle:'الجسم كله', level:'صعب', tip:'اجري بأقصى سرعة في فترات الجري' },
-      { name:'بيربي / Burpees', sets:'4×15', rest:'60s', muscle:'الجسم كله', level:'صعب', tip:'حافظ على سرعة ثابتة' },
-      { name:'قفز الحبل / Jump Rope', sets:'5×3 دقائق', rest:'60s', muscle:'الكل', level:'متوسط', tip:'اقفز بهدوء على مقدمة القدم' },
-      { name:'تسلق جبل / Mountain Climbers', sets:'4×45s', rest:'45s', muscle:'البطن والكتف', level:'متوسط', tip:'الحوض ثابت لا يتأرجح' },
-      { name:'ركض محلي / High Knees', sets:'4×45s', rest:'30s', muscle:'الأرجل والقلب', level:'سهل', tip:'ارفع الركبة لمستوى الحوض' },
-      { name:'قفز نجمة / Jumping Jacks', sets:'3×60s', rest:'30s', muscle:'الكل', level:'سهل', tip:'ابدأ بها كإحماء' },
-      { name:'قفز الصندوق / Box Jumps', sets:'4×10', rest:'60s', muscle:'الأرجل', level:'صعب', tip:'هبط بنعومة على وسط القدم' },
-      { name:'مشروع كوبر / Cooper Test', sets:'12 دقيقة جري مستمر', rest:'—', muscle:'القلب والأرجل', level:'متوسط', tip:'حافظ على نبضات 60-70% من الحد الأقصى' },
-    ]
-  },
-  yoga: {
-    icon: '🧘', title: 'يوغا وإطالة', sub: 'Yoga & Flexibility — 10 وضعيات',
-    exercises: [
-      { name:'سلام الشمس / Sun Salutation', sets:'5 دورات', rest:'—', muscle:'الجسم كله', level:'سهل', tip:'تنفس بعمق مع كل حركة' },
-      { name:'الكلب النازل / Downward Dog', sets:'3×30s', rest:'—', muscle:'الظهر والهامسترينج', level:'سهل', tip:'العقبان للأرض ما استطعت' },
-      { name:'المحارب الأول / Warrior I', sets:'3×30s لكل جهة', rest:'—', muscle:'الأرجل والكتف', level:'سهل', tip:'الحوض نحو الأمام' },
-      { name:'المحارب الثاني / Warrior II', sets:'3×30s لكل جهة', rest:'—', muscle:'الأرجل الداخلية', level:'سهل', tip:'ذراعاك موازيان للأرض' },
-      { name:'وضعية الطفل / Child\'s Pose', sets:'2×60s', rest:'—', muscle:'الظهر السفلي', level:'سهل', tip:'اترخ الكتفين بالكامل' },
-      { name:'الجسر / Bridge Pose', sets:'3×30s', rest:'30s', muscle:'المؤخرة والظهر', level:'سهل', tip:'اضغط الأرداف في الأعلى' },
-      { name:'الحمامة / Pigeon Pose', sets:'2×60s لكل جهة', rest:'—', muscle:'الورك والفخذ', level:'متوسط', tip:'لا تميل الحوض' },
-      { name:'انثناء أمامي / Seated Forward Fold', sets:'3×45s', rest:'—', muscle:'الهامسترينج', level:'سهل', tip:'ابحث عن الشد لا الألم' },
-      { name:'الصقر / Eagle Pose', sets:'3×30s لكل جهة', rest:'—', muscle:'التوازن والتركيز', level:'متوسط', tip:'نقطة ثابتة أمامك لتوازنك' },
-      { name:'شافاسانا / Savasana', sets:'5-10 دقائق', rest:'—', muscle:'الاسترخاء الكامل', level:'سهل', tip:'أغمض عينيك وتنفس بهدوء' },
-    ]
-  },
-  swim: {
-    icon: '🏊', title: 'تمارين السباحة', sub: 'Swimming — 5 تمارين',
-    exercises: [
-      { name:'كراول / Freestyle', sets:'10×50م', rest:'30s', muscle:'الجسم كله', level:'متوسط', tip:'الرأس بالخط مع الجسم لا مرفوعة' },
-      { name:'صدر / Breaststroke', sets:'8×50م', rest:'30s', muscle:'الصدر والأرجل', level:'سهل', tip:'السحبة والضربة في وقت واحد' },
-      { name:'ظهر / Backstroke', sets:'6×50م', rest:'30s', muscle:'الظهر والكتف', level:'متوسط', tip:'عيناك للسقف للحفاظ على الخط' },
-      { name:'فراشة / Butterfly', sets:'4×25م', rest:'60s', muscle:'الكتفين والبطن', level:'صعب', tip:'موجة الجسم تبدأ من الصدر' },
-      { name:'تحمل / Endurance Swim', sets:'1000م مستمر', rest:'—', muscle:'القلب والأوعية', level:'متوسط', tip:'اختر أسلوبًا مريحاً وحافظ على الإيقاع' },
-    ]
-  },
-  cycle: {
-    icon: '🚴', title: 'تمارين الدراجة', sub: 'Cycling — 4 تمارين',
-    exercises: [
-      { name:'HIIT دراجة / Cycling HIIT', sets:'8×1 دقيقة سريع + 2 دقيقة هادئ', rest:'—', muscle:'الأرجل والقلب', level:'صعب', tip:'مقاومة عالية في فترات السرعة' },
-      { name:'تحمل ثابت / Steady State', sets:'45-60 دقيقة بنبضات 65-75%', rest:'—', muscle:'القلب والأرجل', level:'سهل', tip:'حافظ على معدل دراجة 80-100 RPM' },
-      { name:'تدريج قوة / Power Intervals', sets:'5×3 دقائق مقاومة عالية', rest:'3 دقائق', muscle:'الأرجل العلوية', level:'متوسط', tip:'اجلس في السرج وادفع بكل قوتك' },
-      { name:'استعادة / Recovery Ride', sets:'30 دقيقة هادئة', rest:'—', muscle:'تدفق الدم', level:'سهل', tip:'نبضات أقل من 60% — للتعافي فقط' },
-    ]
-  },
-  walk: {
-    icon: '🚶', title: 'مشي وجري', sub: 'Walk & Run — 6 برامج',
-    exercises: [
-      { name:'تدريب 5K / Couch to 5K', sets:'3 مرات أسبوعياً × 30 دقيقة', rest:'يوم راحة بين كل جلسة', muscle:'الأرجل والقلب', level:'سهل', tip:'ابدأ بـ 1 دقيقة جري + 2 دقيقة مشي' },
-      { name:'جري 10K / 10K Run', sets:'5K + 5K بفترة استعادة', rest:'2-3 دقائق في المنتصف', muscle:'القلب والأوعية', level:'متوسط', tip:'الدقائق الخمس الأولى خفيفة' },
-      { name:'مشي سريع / Power Walk', sets:'45 دقيقة بخطى سريعة', rest:'—', muscle:'الأرجل والقلب', level:'سهل', tip:'حرك الذراعين بنشاط لحرق أكثر' },
-      { name:'تدريب تل / Hill Training', sets:'6-8 تكرار صعود تل', rest:'المشي للنزول', muscle:'الفخذ والمؤخرة', level:'صعب', tip:'مائل للأمام قليلاً عند الصعود' },
-      { name:'جري فارتلك / Fartlek', sets:'30 دقيقة تناوب حر', rest:'—', muscle:'الجسم كله', level:'متوسط', tip:'سرّع عند كل عمود إنارة مثلاً' },
-      { name:'مشي يومي / Daily Steps', sets:'10,000 خطوة يومياً', rest:'—', muscle:'الصحة العامة', level:'سهل', tip:'قسّمها — 20 دقيقة صباح + 20 دقيقة مساء' },
-    ]
-  }
+  strength:[
+    {name:'بنش بريس بالبار',sets:'4×10',rest:'90ث',muscle:'الصدر',level:'متوسط',tip:'أبقِ كتفيك لأسفل وظهرك على المقعد'},
+    {name:'سكوات بالبار',sets:'4×10',rest:'120ث',muscle:'الأرجل',level:'متقدم',tip:'ركبتيك تتبع اتجاه أصابع قدميك'},
+    {name:'ديدليفت',sets:'3×8',rest:'120ث',muscle:'الظهر والأرجل',level:'متقدم',tip:'حافظ على استقامة الظهر طوال الوقت'},
+    {name:'تجديف بار',sets:'4×10',rest:'90ث',muscle:'الظهر',level:'متوسط',tip:'اسحب الكوع للخلف حتى يلمس الجذع'},
+    {name:'عسكري بريس',sets:'4×10',rest:'90ث',muscle:'الأكتاف',level:'متوسط',tip:'لا ترجع الكمرة للأمام عند الرفع'},
+    {name:'شراع بالدمبل',sets:'3×12',rest:'60ث',muscle:'الأكتاف',level:'مبتدئ',tip:'ارفع الذراعين لمستوى الكتف فقط'},
+    {name:'كيبل فلاي',sets:'4×12',rest:'60ث',muscle:'الصدر',level:'مبتدئ',tip:'الحركة كقوس تجمع فيها ذراعيك'},
+    {name:'بولي داون',sets:'4×12',rest:'60ث',muscle:'الظهر العريض',level:'مبتدئ',tip:'اسحب للصدر مع إمالة خفيفة للخلف'},
+    {name:'بايسبس كيرل',sets:'3×12',rest:'60ث',muscle:'البايسبس',level:'مبتدئ',tip:'ثبّت الكوع وتحرك الساعد فقط'},
+    {name:'تراي بريس داون',sets:'3×12',rest:'60ث',muscle:'الترايسبس',level:'مبتدئ',tip:'المرفقان بجانب الجسم طوال الحركة'},
+    {name:'ليج بريس',sets:'4×15',rest:'90ث',muscle:'الأرجل',level:'مبتدئ',tip:'لا تنزل الركبة للصدر بالكامل'},
+    {name:'ليج كيرل',sets:'3×12',rest:'60ث',muscle:'الأوتار',level:'مبتدئ',tip:'الحركة بطيئة للأسفل'}
+  ],
+  cardio:[
+    {name:'تريدميل HIIT',sets:'10 جولات',rest:'30ث',muscle:'القلب والرئتين',level:'متوسط',tip:'30ث سريع، 30ث هادئ'},
+    {name:'ألبتيكال 30 دقيقة',sets:'مستمر',rest:'—',muscle:'الجسم الكامل',level:'مبتدئ',tip:'حافظ على نبض 130-150'},
+    {name:'تمرين الدراجة الثابتة',sets:'45 دقيقة',rest:'—',muscle:'الأرجل والقلب',level:'مبتدئ',tip:'مقاومة متوسطة ووتيرة ثابتة'},
+    {name:'تمرين الحبل',sets:'3×100',rest:'60ث',muscle:'الجسم الكامل',level:'متوسط',tip:'القفز على أطراف القدم'},
+    {name:'برنامج تابيتا',sets:'8 جولات',rest:'10ث',muscle:'القلب والرئتين',level:'متقدم',tip:'20ث أقصى جهد، 10ث راحة'},
+    {name:'جري 5 كم',sets:'مستمر',rest:'—',muscle:'القلب والأرجل',level:'متوسط',tip:'وتيرة تستطيع معها الكلام'},
+    {name:'ستيرماستر 20 دقيقة',sets:'مستمر',rest:'—',muscle:'الأرجل والقلب',level:'متوسط',tip:'قوي على القدرة التحملية'},
+    {name:'بوربي',sets:'4×15',rest:'60ث',muscle:'الجسم الكامل',level:'متقدم',tip:'أرض — ضغط — قفز — تصفيق'}
+  ],
+  yoga:[
+    {name:'وضعية الكوبرا',sets:'3×30ث',rest:'30ث',muscle:'الظهر والبطن',level:'مبتدئ',tip:'انظر للأمام وأرفع الصدر ببطء'},
+    {name:'وضعية الطفل',sets:'2 دقيقة',rest:'—',muscle:'الظهر والأرداف',level:'مبتدئ',tip:'تنفس عميق وأرخِ الكتفين'},
+    {name:'وضعية الكلب للأسفل',sets:'5×30ث',rest:'15ث',muscle:'الساقان والكتف',level:'مبتدئ',tip:'ادفع بكعبيك للأرض'},
+    {name:'وضعية المحارب I',sets:'3×45ث',rest:'15ث',muscle:'الأرجل والأكتاف',level:'متوسط',tip:'الورك إلى الأمام والذراعان للأعلى'},
+    {name:'وضعية المحارب II',sets:'3×45ث',rest:'15ث',muscle:'الأرجل والجذع',level:'متوسط',tip:'الذراعان موازيتان للأرض'},
+    {name:'تمدد القطة والبقرة',sets:'2 دقيقة',rest:'—',muscle:'العمود الفقري',level:'مبتدئ',tip:'حرك الظهر مع التنفس'},
+    {name:'وضعية الجسر',sets:'3×30ث',rest:'30ث',muscle:'الأرداف والظهر',level:'مبتدئ',tip:'ارفع الورك حتى خط مستقيم'},
+    {name:'وضعية الشجرة',sets:'3×30ث',rest:'15ث',muscle:'التوازن والتركيز',level:'متوسط',tip:'النظر لنقطة ثابتة للتوازن'},
+    {name:'تمدد الأوتار الخلفية',sets:'3×30ث',rest:'15ث',muscle:'أوتار الركبة',level:'مبتدئ',tip:'لا تثني الركبة بقوة'},
+    {name:'تمدد الصدر المفتوح',sets:'3×30ث',rest:'15ث',muscle:'الصدر والأكتاف',level:'مبتدئ',tip:'افتح الذراعين للخلف وتنفس عميقاً'}
+  ],
+  swim:[
+    {name:'كرول 200م',sets:'4 مجموعات',rest:'60ث',muscle:'الجسم الكامل',level:'متوسط',tip:'الرأس داخل الماء وتدوير مع التنفس'},
+    {name:'باكستروك 100م',sets:'4 مجموعات',rest:'45ث',muscle:'الظهر والأكتاف',level:'مبتدئ',tip:'الجسم مستقيم وضربات منتظمة'},
+    {name:'برياستستروك 150م',sets:'3 مجموعات',rest:'60ث',muscle:'الصدر والأرجل',level:'متوسط',tip:'انسحب ثم اندفع باستخدام الضفدع'},
+    {name:'فراشة 50م',sets:'5 مجموعات',rest:'90ث',muscle:'الجسم الكامل',level:'متقدم',tip:'حركة موجية للجسم من الورك'},
+    {name:'كيك بورد 200م',sets:'4 مجموعات',rest:'45ث',muscle:'الأرجل والقلب',level:'مبتدئ',tip:'اضرب من الورك لا من الركبة'}
+  ],
+  cycle:[
+    {name:'ركوب عادي 30 دقيقة',sets:'مستمر',rest:'—',muscle:'الأرجل والقلب',level:'مبتدئ',tip:'سرعة ثابتة وقامة مستقيمة'},
+    {name:'تدريب جبلي',sets:'60 دقيقة',rest:'—',muscle:'الأرجل والقلب',level:'متقدم',tip:'انخفض عند الصعود لزيادة القوة'},
+    {name:'سبرينت دراجة',sets:'10×30ث',rest:'90ث',muscle:'الأرجل والقلب',level:'متوسط',tip:'أقصى سرعة مع مقاومة عالية'},
+    {name:'دراجة ثابتة 45 دقيقة',sets:'مستمر',rest:'—',muscle:'الأرجل والقلب',level:'مبتدئ',tip:'نبض 130-150 طوال الجلسة'}
+  ],
+  walk:[
+    {name:'مشي سريع 30 دقيقة',sets:'مستمر',rest:'—',muscle:'الجسم الكامل',level:'مبتدئ',tip:'خطوات سريعة وذراعان متأرجحتان'},
+    {name:'مشي تلال',sets:'45 دقيقة',rest:'—',muscle:'الأرجل والقلب',level:'متوسط',tip:'تحريك الذراعين يزيد حرق السعرات'},
+    {name:'مشي نوردك بالعصي',sets:'40 دقيقة',rest:'—',muscle:'الجسم الكامل',level:'مبتدئ',tip:'العصا تشرك 90% من عضلات الجسم'},
+    {name:'مشي صباحي 10 آلاف خطوة',sets:'مستمر',rest:'—',muscle:'الجسم الكامل',level:'مبتدئ',tip:'الأفضل قبل الفطور لحرق أكثر'},
+    {name:'جري خفيف 20 دقيقة',sets:'مستمر',rest:'—',muscle:'القلب والأرجل',level:'مبتدئ',tip:'وتيرة تستطيع معها الكلام بسهولة'},
+    {name:'تمشية مع ارتفاع نبض',sets:'5×5 دقائق',rest:'2 دقيقة',muscle:'القلب والأرجل',level:'متوسط',tip:'5 دقائق سريع ثم 2 دقيقة هادئ'}
+  ]
 };
 
+let currentExCat = 'strength';
 function openExLib(cat) {
-  const lib = EX_LIBRARY[cat];
-  if (!lib) return;
-  const overlay = document.getElementById('ex-modal-overlay');
-  document.getElementById('ex-modal-icon').textContent = lib.icon;
-  document.getElementById('ex-modal-title').textContent = lib.title;
-  document.getElementById('ex-modal-sub').textContent = lib.sub;
-  const body = document.getElementById('ex-modal-body');
-  body.innerHTML = lib.exercises.map((ex, i) => `
-    <div style="border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:var(--off);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <div style="font-size:14px;font-weight:700;">${ex.name}</div>
-        <span class="badge ${ex.level==='صعب'?'badge-coral':ex.level==='متوسط'?'badge-amber':'badge-green'}">${ex.level}</span>
+  currentExCat = cat;
+  const catNames = {strength:'قوة وعضلات',cardio:'كارديو',yoga:'يوغا وتمدد',swim:'سباحة',cycle:'دراجة',walk:'مشي وجري'};
+  const exercises = EX_LIBRARY[cat] || [];
+  let html = '';
+  exercises.forEach(ex => {
+    html += `<div style="background:var(--off);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:14px;font-weight:700;">${ex.name}</span>
+        <span style="font-size:11px;padding:3px 8px;background:var(--g-pale);color:var(--g-mid);border-radius:8px;font-weight:600;">${ex.level}</span>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-        <span style="font-size:12px;background:var(--g-pale);color:var(--g-mid);padding:3px 10px;border-radius:99px;"><i class="fa fa-repeat"></i> ${ex.sets}</span>
-        <span style="font-size:12px;background:#E6F1FB;color:var(--blue);padding:3px 10px;border-radius:99px;"><i class="fa fa-clock"></i> راحة: ${ex.rest}</span>
-        <span style="font-size:12px;background:#FAEEDA;color:var(--amber);padding:3px 10px;border-radius:99px;"><i class="fa fa-person"></i> ${ex.muscle}</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div style="text-align:center;background:var(--card);border-radius:8px;padding:6px;"><div style="font-size:13px;font-weight:700;color:var(--g-mid);">${ex.sets}</div><div style="font-size:10px;color:var(--muted);">مجموعات</div></div>
+        <div style="text-align:center;background:var(--card);border-radius:8px;padding:6px;"><div style="font-size:13px;font-weight:700;color:var(--blue);">${ex.rest}</div><div style="font-size:10px;color:var(--muted);">راحة</div></div>
+        <div style="text-align:center;background:var(--card);border-radius:8px;padding:6px;"><div style="font-size:11px;font-weight:600;color:var(--amber);">${ex.muscle}</div><div style="font-size:10px;color:var(--muted);">العضلة</div></div>
       </div>
-      <div style="font-size:12px;color:var(--muted);border-right:3px solid var(--g-mint);padding-right:8px;">💡 ${ex.tip}</div>
-    </div>
-  `).join('');
-  overlay.style.display = 'flex';
+      <div style="font-size:12px;color:var(--muted);padding:8px;background:var(--card);border-radius:8px;border-right:3px solid var(--g-mint);">
+        💡 ${ex.tip}
+      </div>
+    </div>`;
+  });
+  const modal = document.getElementById('ex-modal-overlay');
+  if(modal) {
+    document.getElementById('ex-modal-cat-title').textContent = catNames[cat] || cat;
+    document.getElementById('ex-modal-list').innerHTML = html;
+    modal.style.display = 'flex';
+  }
+}
+function closeExLib() {
+  const modal = document.getElementById('ex-modal-overlay');
+  if(modal) modal.style.display = 'none';
 }
 
-function closeExModal() {
-  document.getElementById('ex-modal-overlay').style.display = 'none';
-}
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeExModal(); });
+/* ═══════════════════════════════════════════════
+   PRAYER TIMES — Aladhan API
+═══════════════════════════════════════════════ */
+let prayerTimesCache = null;
+let prayerCountdownInterval = null;
+const PRAYER_NAMES = {Fajr:'الفجر',Dhuhr:'الظهر',Asr:'العصر',Maghrib:'المغرب',Isha:'العشاء'};
+const PRAYER_KEYS  = ['Fajr','Dhuhr','Asr','Maghrib','Isha'];
 
-/* ── INIT ─────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
-  const slider=document.getElementById('inj-severity'), label=document.getElementById('sev-label');
-  if(slider&&label) slider.addEventListener('input',()=>{label.textContent=slider.value+'/10';});
-  updateBiometricStatus();
-});
+async function fetchPrayerTimes(force) {
+  const today = new Date().toISOString().slice(0,10);
+  const cached = localStorage.getItem('fm_prayer_'+today);
+  if(!force && cached) {
+    prayerTimesCache = JSON.parse(cached);
+    renderPrayerTimes(); return;
+  }
+  const loading = document.getElementById('prayer-loading');
+  const content = document.getElementById('prayer-content');
+  if(loading) loading.style.display='block';
+  if(content) content.style.display='none';
+  try {
+    const pos = await new Promise((res,rej) => navigator.geolocation.getCurrentPosition(res,rej,{timeout:8000}));
+    const {latitude:lat, longitude:lng} = pos.coords;
+    const resp = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=4`);
+    const json = await resp.json();
+    const timings = json.data?.timings;
+    if(!timings) throw new Error('No timings');
+    prayerTimesCache = {timings, date:today};
+    localStorage.setItem('fm_prayer_'+today, JSON.stringify(prayerTimesCache));
+    renderPrayerTimes();
+  } catch(e) {
+    // Fallback: use Mecca times
+    prayerTimesCache = {timings:{Fajr:'05:00',Dhuhr:'12:15',Asr:'15:30',Maghrib:'18:00',Isha:'19:30'},date:today};
+    renderPrayerTimes();
+    if(loading) loading.innerHTML='<i class="fa fa-location-slash" style="margin-left:6px;"></i> تعذّر تحديد الموقع — يتم استخدام أوقات تقديرية';
+  }
+}
+
+function renderPrayerTimes() {
+  const loading = document.getElementById('prayer-loading');
+  const content = document.getElementById('prayer-content');
+  const grid    = document.getElementById('prayer-grid');
+  if(!prayerTimesCache||!grid) return;
+  if(loading) loading.style.display='none';
+  if(content) content.style.display='block';
+
+  const now = new Date();
+  const nowMins = now.getHours()*60 + now.getMinutes();
+  const timings = prayerTimesCache.timings;
+
+  // Find current / next prayer
+  const minsArr = PRAYER_KEYS.map(k => {
+    const [h,m] = (timings[k]||'00:00').split(':').map(Number);
+    return h*60+m;
+  });
+  let currentIdx=-1, nextIdx=-1;
+  for(let i=PRAYER_KEYS.length-1;i>=0;i--){ if(nowMins>=minsArr[i]){currentIdx=i;break;} }
+  nextIdx=(currentIdx+1) % PRAYER_KEYS.length;
+
+  grid.innerHTML = '';
+  PRAYER_KEYS.forEach((key,i) => {
+    const div = document.createElement('div');
+    div.className = 'prayer-item'+(i===currentIdx?' current':i===nextIdx?' next':'');
+    div.innerHTML = `<div class="p-name">${PRAYER_NAMES[key]}</div><div class="p-time">${timings[key]}</div>`;
+    grid.appendChild(div);
+  });
+
+  // Countdown to next prayer
+  updatePrayerCountdown(timings, nextIdx, minsArr);
+}
+
+function updatePrayerCountdown(timings, nextIdx, minsArr) {
+  const cd = document.getElementById('prayer-countdown');
+  if(!cd) return;
+  const now = new Date();
+  const nowMins = now.getHours()*60 + now.getMinutes();
+  let diff = minsArr[nextIdx] - nowMins;
+  if(diff < 0) diff += 1440;
+  const h = Math.floor(diff/60), m = diff%60;
+  const nextName = PRAYER_NAMES[PRAYER_KEYS[nextIdx]];
+  cd.innerHTML = `<i class="fa fa-clock" style="margin-left:6px;"></i> باقي على صلاة <strong>${nextName}</strong>: ${h ? h+'س ' : ''}${m} دقيقة`;
+}
+
+function startPrayerCountdown() {
+  if(prayerCountdownInterval) clearInterval(prayerCountdownInterval);
+  prayerCountdownInterval = setInterval(() => {
+    if(!prayerTimesCache) return;
+    const timings = prayerTimesCache.timings;
+    const now = new Date();
+    const nowMins = now.getHours()*60 + now.getMinutes();
+    const minsArr = PRAYER_KEYS.map(k=>{const[h,m]=(timings[k]||'00:00').split(':').map(Number);return h*60+m;});
+    let currentIdx=-1;
+    for(let i=PRAYER_KEYS.length-1;i>=0;i--){if(nowMins>=minsArr[i]){currentIdx=i;break;}}
+    const nextIdx=(currentIdx+1)%PRAYER_KEYS.length;
+    updatePrayerCountdown(timings, nextIdx, minsArr);
+  }, 60000);
+}
+
+/* ═══════════════════════════════════════════════
+   GULF FOODS DATABASE
+═══════════════════════════════════════════════ */
+const GULF_FOODS = [
+  // RICE
+  {n:'كبسة دجاج',cat:'rice',cal:480,p:32,c:58,f:12},{n:'مجبوس لحم',cat:'rice',cal:520,p:35,c:60,f:14},
+  {n:'رز بخاري',cat:'rice',cal:460,p:28,c:62,f:11},{n:'رز مكبوس',cat:'rice',cal:450,p:26,c:64,f:10},
+  {n:'مندي',cat:'rice',cal:510,p:38,c:55,f:15},{n:'هريسة',cat:'rice',cal:380,p:20,c:52,f:9},
+  {n:'رز حليب',cat:'rice',cal:310,p:8,c:52,f:8},{n:'رز بالجزر',cat:'rice',cal:290,p:6,c:56,f:4},
+  {n:'رز صيادية',cat:'rice',cal:430,p:30,c:50,f:12},{n:'رز دجاج باللبن',cat:'rice',cal:460,p:32,c:54,f:13},
+  // MEAT
+  {n:'شاورما دجاج',cat:'meat',cal:420,p:30,c:40,f:14},{n:'شاورما لحم',cat:'meat',cal:460,p:32,c:38,f:18},
+  {n:'برجر',cat:'meat',cal:500,p:28,c:42,f:22},{n:'دجاج مشوي',cat:'meat',cal:320,p:45,c:0,f:12},
+  {n:'كباب مشوي',cat:'meat',cal:380,p:36,c:5,f:22},{n:'مشاوي مشكلة',cat:'meat',cal:560,p:52,c:8,f:32},
+  {n:'دجاج مقلي',cat:'meat',cal:480,p:35,c:24,f:24},{n:'لحم مع خضار',cat:'meat',cal:340,p:30,c:20,f:14},
+  {n:'سمك مشوي',cat:'meat',cal:280,p:42,c:0,f:10},{n:'روبيان مشوي',cat:'meat',cal:260,p:38,c:2,f:8},
+  {n:'ستيك',cat:'meat',cal:380,p:40,c:0,f:22},{n:'تيكا دجاج',cat:'meat',cal:340,p:38,c:6,f:14},
+  // BREAKFAST
+  {n:'فول مدمس',cat:'breakfast',cal:280,p:14,c:42,f:6},{n:'بيض مقلي (2)',cat:'breakfast',cal:180,p:12,c:2,f:14},
+  {n:'بيض مسلوق (2)',cat:'breakfast',cal:160,p:12,c:1,f:11},{n:'جبن أبيض',cat:'breakfast',cal:120,p:8,c:2,f:9},
+  {n:'لبنة',cat:'breakfast',cal:100,p:7,c:4,f:6},{n:'عسل + خبز',cat:'breakfast',cal:320,p:5,c:60,f:6},
+  {n:'فطور إنجليزي',cat:'breakfast',cal:550,p:30,c:40,f:28},{n:'شكشوكة',cat:'breakfast',cal:240,p:14,c:16,f:14},
+  {n:'حمص بالطحينة',cat:'breakfast',cal:260,p:10,c:30,f:12},{n:'تمر (5 حبات)',cat:'breakfast',cal:140,p:1,c:36,f:0},
+  // BREAD
+  {n:'خبز أبيض (شريحتان)',cat:'bread',cal:160,p:5,c:30,f:2},{n:'خبز برغر',cat:'bread',cal:200,p:6,c:36,f:4},
+  {n:'خبز الشراك',cat:'bread',cal:130,p:4,c:26,f:1},{n:'خبز الصاج',cat:'bread',cal:140,p:4,c:28,f:2},
+  {n:'خبز أسمر',cat:'bread',cal:140,p:5,c:28,f:2},{n:'خبز الريهان',cat:'bread',cal:260,p:7,c:40,f:8},
+  {n:'سمبوسة (3 قطع)',cat:'bread',cal:320,p:10,c:36,f:16},{n:'كيبة (3 قطع)',cat:'bread',cal:280,p:14,c:28,f:12},
+  // SWEETS
+  {n:'كنافة (قطعة)',cat:'sweets',cal:380,p:8,c:58,f:14},{n:'بسبوسة (قطعة)',cat:'sweets',cal:280,p:4,c:48,f:10},
+  {n:'أم علي',cat:'sweets',cal:420,p:10,c:52,f:20},{n:'قطايف (3 قطع)',cat:'sweets',cal:360,p:8,c:56,f:12},
+  {n:'لقيمات (10 حبات)',cat:'sweets',cal:340,p:5,c:52,f:14},{n:'هريسة حلوة',cat:'sweets',cal:300,p:6,c:50,f:10},
+  {n:'مهلبية',cat:'sweets',cal:200,p:5,c:32,f:7},{n:'حلاوة المحلبية',cat:'sweets',cal:240,p:4,c:38,f:8},
+  // DRINKS
+  {n:'شاي حليب',cat:'drinks',cal:120,p:3,c:18,f:4},{n:'قهوة سادة',cat:'drinks',cal:5,p:0,c:1,f:0},
+  {n:'لبن (كوب)',cat:'drinks',cal:150,p:8,c:12,f:8},{n:'عصير برتقال طازج',cat:'drinks',cal:110,p:2,c:26,f:0},
+  {n:'ماء جوز الهند',cat:'drinks',cal:46,p:2,c:9,f:0},{n:'حليب كامل الدسم (كوب)',cat:'drinks',cal:150,p:8,c:11,f:8},
+  {n:'بروتين شيك',cat:'drinks',cal:180,p:30,c:10,f:3},{n:'عصير أناناس',cat:'drinks',cal:130,p:1,c:32,f:0},
+  // SALAD
+  {n:'سلطة فتوش',cat:'salad',cal:180,p:4,c:22,f:8},{n:'سلطة تبولة',cat:'salad',cal:160,p:4,c:20,f:7},
+  {n:'سلطة خضراء بسيطة',cat:'salad',cal:80,p:2,c:8,f:5},{n:'سلطة سيزر بالدجاج',cat:'salad',cal:320,p:24,c:18,f:16},
+  {n:'سلطة روكيت بالتمر',cat:'salad',cal:200,p:4,c:24,f:10},{n:'سلطة حمص وطماطم',cat:'salad',cal:140,p:6,c:18,f:5}
+];
+
+let currentGulfCat = 'all';
+function setGulfCat(cat, btn) {
+  currentGulfCat = cat;
+  document.querySelectorAll('.gulf-pill').forEach(p=>p.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderGulfFoodsGrid();
+}
+function filterGulfFoods() {
+  renderGulfFoodsGrid();
+}
+function renderGulfFoodsGrid() {
+  const grid = document.getElementById('gulf-foods-grid'); if(!grid) return;
+  const q = (document.getElementById('gulf-search')?.value||'').trim();
+  const foods = GULF_FOODS.filter(f =>
+    (currentGulfCat==='all' || f.cat===currentGulfCat) &&
+    (!q || f.n.includes(q))
+  );
+  if(!foods.length){grid.innerHTML='<p style="color:var(--muted);font-size:13px;padding:16px;grid-column:1/-1;">لا توجد نتائج</p>';return;}
+  grid.innerHTML = foods.map(f => `
+    <div class="gulf-food-card" onclick="logGulfFoodItem('${f.n.replace(/'/g,"\\'")}',${f.cal},${f.p},${f.c},${f.f})">
+      <div class="gf-name">${f.n}</div>
+      <div class="gf-cal">${f.cal} <small>kcal</small></div>
+      <div class="gf-macros">
+        <span class="gf-macro gf-p">P ${f.p}g</span>
+        <span class="gf-macro gf-c">C ${f.c}g</span>
+        <span class="gf-macro gf-f">F ${f.f}g</span>
+      </div>
+    </div>`).join('');
+}
+async function logGulfFoodItem(name,cal,protein,carbs,fat) {
+  if(!currentUser){showToast('سجّل دخولك أولاً');return;}
+  try {
+    await db.collection('users').doc(currentUser.uid).collection('meals').add({
+      name,calories:cal,protein,carbs,fat,sugar:0,fiber:0,size:'حصة',
+      timestamp:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showToast('✅ تم إضافة '+name+' ('+cal+' kcal)');
+    await loadTodayMeals(currentUser.uid);
+    updateDashboardFromMeals(); renderSavedMeals();
+  } catch(e){showToast('❌ '+e.message);}
+}
+
+/* ═══════════════════════════════════════════════
+   ADVANCED PROGRESS REPORTS
+═══════════════════════════════════════════════ */
+let monthlyData30 = {cal:[], steps:[]};
+
+function loadReportsPage() {
+  const activeTab = document.querySelector('.tab-btn.active');
+  const tabName = activeTab ? activeTab.textContent.trim() : '';
+  if(tabName.includes('أسبوعي') || tabName.includes('Weekly')) {
+    loadWeeklyReport();
+  } else if(tabName.includes('شهري') || tabName.includes('Monthly')) {
+    loadMonthlyReport();
+  }
+  // Always load daily
+  renderSavedMeals();
+}
+
+async function loadWeeklyReport() {
+  if(!currentUser) return;
+  const uid = currentUser.uid;
+  const today = new Date();
+  const days7 = [], labels = ['أحد','إث','ث','أر','خم','ج','سب'];
+
+  // Build last 7 days
+  for(let i=6;i>=0;i--){
+    const d=new Date(today); d.setDate(d.getDate()-i);
+    days7.push(d.toISOString().slice(0,10));
+  }
+
+  try {
+    // Get step history
+    const stepsSnap = await db.collection('users').doc(uid).collection('steps')
+      .orderBy('date','desc').limit(7).get();
+    const stepsMap = {};
+    stepsSnap.docs.forEach(doc=>{const d=doc.data();stepsMap[d.date]=d.steps||0;});
+
+    // Get meal history (aggregate by day)
+    const startD=new Date(today);startD.setDate(startD.getDate()-6);startD.setHours(0,0,0,0);
+    const mealsSnap = await db.collection('users').doc(uid).collection('meals')
+      .where('timestamp','>=',startD).get();
+    const calMap={};
+    mealsSnap.docs.forEach(doc=>{
+      const d=doc.data();
+      if(!d.timestamp) return;
+      const dt=d.timestamp.toDate().toISOString().slice(0,10);
+      calMap[dt]=(calMap[dt]||0)+(d.calories||0);
+    });
+
+    const calData = days7.map(d=>calMap[d]||0);
+    const stepData = days7.map(d=>stepsMap[d]||0);
+    const dayLabels = days7.map(d=>{const day=new Date(d);return labels[day.getDay()];});
+
+    // Stats
+    const totalMeals = mealsSnap.docs.length;
+    const avgCal = calData.filter(v=>v>0).length ? Math.round(calData.reduce((a,b)=>a+b)/calData.filter(v=>v>0).length) : 0;
+    const avgSteps = stepData.filter(v=>v>0).length ? Math.round(stepData.reduce((a,b)=>a+b)/stepData.filter(v=>v>0).length) : 0;
+    const daysActive = calData.filter(v=>v>0).length;
+    const ach = Math.round(daysActive/7*100);
+
+    g('wstat-cal') && (g('wstat-cal').textContent = avgCal||'—');
+    g('wstat-steps') && (g('wstat-steps').textContent = avgSteps?avgSteps.toLocaleString():'—');
+    g('wstat-meals') && (g('wstat-meals').textContent = totalMeals||'—');
+    g('wstat-ach') && (g('wstat-ach').textContent = ach+'%');
+
+    renderBarChart('weekly-cal-chart', calData, dayLabels, 'var(--coral)', 'kcal');
+    renderBarChart('weekly-steps-chart', stepData, dayLabels, 'var(--blue)', 'خطوة');
+
+    // Weight trend
+    const wSnap = await db.collection('users').doc(uid).collection('weight_history')
+      .orderBy('timestamp','desc').limit(7).get();
+    if(wSnap.docs.length > 1){
+      const wData=wSnap.docs.map(d=>d.data().weight).reverse();
+      const wLabels=wSnap.docs.map((_,i)=>i===0?'الأحدث':'').reverse();
+      g('weight-trend-empty') && (g('weight-trend-empty').style.display='none');
+      g('weekly-weight-chart') && (g('weekly-weight-chart').style.display='flex');
+      renderBarChart('weekly-weight-chart', wData, wLabels, 'var(--g-base)', 'kg');
+    }
+
+  } catch(e){console.error('Weekly report error:',e);}
+}
+
+async function loadMonthlyReport() {
+  if(!currentUser) return;
+  const uid = currentUser.uid;
+  const today = new Date();
+  const days30 = [];
+  for(let i=29;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);days30.push(d.toISOString().slice(0,10));}
+
+  try {
+    const startD=new Date(today);startD.setDate(startD.getDate()-29);startD.setHours(0,0,0,0);
+
+    const [mealsSnap,stepsSnap] = await Promise.all([
+      db.collection('users').doc(uid).collection('meals').where('timestamp','>=',startD).get(),
+      db.collection('users').doc(uid).collection('steps').orderBy('date','desc').limit(30).get()
+    ]);
+
+    const calMap={},stepsMap={};
+    mealsSnap.docs.forEach(doc=>{const d=doc.data();if(!d.timestamp)return;const dt=d.timestamp.toDate().toISOString().slice(0,10);calMap[dt]=(calMap[dt]||0)+(d.calories||0);});
+    stepsSnap.docs.forEach(doc=>{const d=doc.data();stepsMap[d.date]=d.steps||0;});
+
+    const calArr=days30.map(d=>calMap[d]||0);
+    const stepsArr=days30.map(d=>stepsMap[d]||0);
+    monthlyData30={cal:calArr,steps:stepsArr,labels:days30.map(d=>d.slice(5))};
+
+    const totalCal=calArr.reduce((a,b)=>a+b,0);
+    const totalSteps=stepsArr.reduce((a,b)=>a+b,0);
+    const streak=calcStreak(calArr);
+
+    g('mstat-cal') && (g('mstat-cal').textContent=totalCal>0?Math.round(totalCal/1000)+'k':'—');
+    g('mstat-steps') && (g('mstat-steps').textContent=totalSteps>0?(totalSteps/1000).toFixed(0)+'k':'—');
+    g('mstat-meals') && (g('mstat-meals').textContent=mealsSnap.docs.length||'—');
+    g('mstat-streak') && (g('mstat-streak').textContent=streak||'—');
+
+    show30Chart('cal', document.getElementById('m30-cal-btn'));
+  } catch(e){console.error('Monthly report error:',e);}
+}
+
+function calcStreak(arr) {
+  let streak=0;
+  for(let i=arr.length-1;i>=0;i--){if(arr[i]>0)streak++;else break;}
+  return streak;
+}
+
+function show30Chart(type, btn) {
+  document.querySelectorAll('#m30-cal-btn,#m30-steps-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const data = type==='cal'?monthlyData30.cal:monthlyData30.steps;
+  const color = type==='cal'?'var(--coral)':'var(--blue)';
+  const unit  = type==='cal'?'kcal':'خطوة';
+  renderBarChart('monthly-chart', data, monthlyData30.labels||[], color, unit, true);
+}
+
+function renderBarChart(containerId, data, labels, color, unit, small) {
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  const max = Math.max(...data, 1);
+  const height = small ? 140 : 120;
+  container.innerHTML = data.map((val,i)=>{
+    const pct = Math.round((val/max)*100);
+    const displayVal = val>=1000?(val/1000).toFixed(1)+'k':val||'';
+    return `<div class="bc-bar-col">
+      <div class="bc-val">${displayVal}</div>
+      <div class="bc-bar" style="height:${Math.max(pct*height/100,val>0?4:1)}px;background:${val>0?color:'#e5e5e5'};"></div>
+      <div class="bc-label">${labels[i]||''}</div>
+    </div>`;
+  }).join('');
+}
+
+// Override switchTab to load data on tab switch
+const _originalSwitchTab = switchTab;
+function switchTab(btn, name) {
+  _originalSwitchTab(btn, name);
+  if(name==='weekly') setTimeout(loadWeeklyReport, 100);
+  if(name==='monthly') setTimeout(loadMonthlyReport, 100);
+}
+
 </script>
 </body>
 </html>
