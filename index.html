@@ -1822,8 +1822,9 @@ DO NOT guess — only describe what you actually see in the image.
 Return ONLY a valid JSON object, no extra text, no markdown:
 {"name":"<exact Arabic name>","size":"<estimated portion>","calories":<kcal number>,"protein":<grams>,"carbs":<grams>,"fat":<grams>,"sugar":<grams>,"fiber":<grams>}`;
     const txt = await callGemini(imagePrompt, foodImageBase64, foodImageMime);
-    const jsonMatch = txt.replace(/```json?|```/g,'').trim().match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('فشل التعرف على الصورة، جرب صورة أوضح');
+    const cleaned = txt.replace(/```json?|```/g,'').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('[DEBUG] رد الـ AI: ' + (cleaned.substring(0,200)||'(فارغ)'));
     const result = JSON.parse(jsonMatch[0]);
     loadDiv.remove(); displayFoodResult(result);
     showToast('🧠 تم التحليل بنجاح');
