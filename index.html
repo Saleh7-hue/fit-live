@@ -1732,11 +1732,11 @@ function saveGeminiKey() {
   showToast('✅ تم حفظ مفتاح Gemini');
 }
 
-async function callGemini(prompt, imgB64, imgMime) {
+async function callGemini(prompt, imgB64, imgMime, maxTokens=800) {
   const parts = [];
   if (imgB64) parts.push({inlineData:{mimeType:imgMime,data:imgB64}});
   parts.push({text:prompt});
-  const body = {contents:[{parts}],generationConfig:{temperature:0.1,maxOutputTokens:800}};
+  const body = {contents:[{parts}],generationConfig:{temperature:0.1,maxOutputTokens:maxTokens}};
   const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+geminiApiKey, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if (!res.ok) { const err=await res.json(); throw new Error(err.error?.message||'HTTP '+res.status); }
   const data = await res.json();
@@ -2176,7 +2176,7 @@ async function generateTrainingPlan() {
   if(btn){btn.disabled=true;btn.innerHTML='<i class="fa fa-spinner fa-spin"></i> جاري التوليد...';}
   const prompt = DR_KHALID_PROMPT+getChatContext()+'\n\nصمّم برنامج تدريبي اسبوعي كامل بناء على هدف المستخدم وقياساته. اشرح كل يوم بالتفصيل (التمارين، السيتات، التكرارات، الراحة). اضف ملاحظات التغذية المناسبة. استخدم العربية. نسق الإجابة بشكل واضح.';
   try {
-    const plan=await callGemini(prompt);
+    const plan=await callGemini(prompt, null, null, 3000);
     let out=document.getElementById('training-plan-output');
     if(!out){out=document.createElement('div');out.id='training-plan-output';document.getElementById('pg-exercise').prepend(out);}
     out.style.cssText='background:#fff;border-radius:14px;padding:18px;margin-bottom:16px;border:1px solid var(--border);white-space:pre-wrap;line-height:1.9;font-size:13px;display:block;';
@@ -2376,7 +2376,7 @@ async function generateAndSaveNutritionPlan(uid,goal,weekNum,year) {
   const kcal=calcTDEE(w,h,age,gen,goal);
   const goalNames={lose:'دايت - خسارة تدريجية',strict:'دايت قاسي - خسارة سريعة',cut:'تنشيف - إظهار العضل',bulk:'تضخيم - بناء العضل',healthygain:'تسمين صحي'};
   const prompt='انت د. خالد خبير تغذية علاجية بخبرة 20 عاما. المستخدم: وزن '+w+'كجم، طول '+h+'سم، عمر '+age+' سنة. الهدف: '+(goalNames[goal]||goal)+'. السعرات اليومية: '+kcal+' سعرة. صمم خطة غذائية لأسبوع كامل. أجب بـ JSON فقط: {"dailyCalories":'+kcal+',"goal":"'+goal+'","weeklyNote":"ملاحظة قصيرة","macros":{"protein":0,"carbs":0,"fat":0},"days":[{"day":"الاثنين","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0},{"day":"الثلاثاء","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0},{"day":"الأربعاء","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0},{"day":"الخميس","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0},{"day":"الجمعة","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0},{"day":"السبت","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0},{"day":"الأحد","meals":[{"type":"إفطار","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"غداء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"عشاء","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0},{"type":"سناك","name":"اسم","details":"تفاصيل","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0}]}';
-  const raw=await callGemini(prompt);
+  const raw=await callGemini(prompt, null, null, 4000);
   const data=JSON.parse(raw.replace(/```json\n?|\n?```/g,'').trim());
   await db.collection('users').doc(uid).collection('plans').doc('nutrition').set({goal,weekNum,year,content:JSON.stringify(data),generatedAt:firebase.firestore.FieldValue.serverTimestamp()});
   renderNutritionPlan(data,goal);
@@ -2386,7 +2386,7 @@ async function generateAndSaveTrainingPlan(uid,goal,weekNum,year) {
   const w=userProfile.weight||75,h=userProfile.height||175,age=userProfile.age||25,inj=userProfile.injuries||'لا توجد';
   const goalNames={lose:'دايت - حرق دهون',strict:'دايت قاسي - حرق مكثف',cut:'تنشيف - إظهار العضل',bulk:'تضخيم - بناء كتلة عضلية',healthygain:'تسمين صحي - تضخيم خفيف'};
   const prompt='انت د. خالد مدرب كمال اجسام بخبرة 20 عاما. المستخدم: وزن '+w+'كجم، طول '+h+'سم، عمر '+age+' سنة. الهدف: '+(goalNames[goal]||goal)+'. الاصابات: '+inj+'. صمم برنامج تدريبي أسبوعي (7 أيام). اجب بـ JSON فقط: {"goal":"'+goal+'","weeklyNote":"ملاحظة تدريبية","days":[{"day":"الاثنين","type":"قوة","focus":"الصدر والأكتاف","duration":"60 دقيقة","icon":"🏋️","exercises":[{"name":"اسم التمرين","sets":4,"reps":"10-12","rest":"90 ث","notes":"ملاحظة"}]},{"day":"الثلاثاء","type":"كارديو","focus":"حرق دهون","duration":"45 دقيقة","icon":"🏃","exercises":[{"name":"اسم","sets":3,"reps":"15-20","rest":"60 ث","notes":""}]},{"day":"الأربعاء","type":"راحة نشطة","focus":"تمدد وتعافي","duration":"30 دقيقة","icon":"🧘","exercises":[{"name":"تمدد عام","sets":1,"reps":"5 دقائق","rest":"0","notes":""}]},{"day":"الخميس","type":"قوة","focus":"الظهر والبطن","duration":"60 دقيقة","icon":"🏋️","exercises":[{"name":"اسم","sets":4,"reps":"10-12","rest":"90 ث","notes":""}]},{"day":"الجمعة","type":"كارديو","focus":"حرق دهون","duration":"45 دقيقة","icon":"🚴","exercises":[{"name":"اسم","sets":3,"reps":"20 دقيقة","rest":"0","notes":""}]},{"day":"السبت","type":"قوة","focus":"الأرجل","duration":"60 دقيقة","icon":"🏋️","exercises":[{"name":"اسم","sets":4,"reps":"12-15","rest":"90 ث","notes":""}]},{"day":"الأحد","type":"راحة","focus":"استشفاء كامل","duration":"0","icon":"😴","exercises":[]}]}';
-  const raw=await callGemini(prompt);
+  const raw=await callGemini(prompt, null, null, 4000);
   const data=JSON.parse(raw.replace(/```json\n?|\n?```/g,'').trim());
   await db.collection('users').doc(uid).collection('plans').doc('training').set({goal,weekNum,year,content:JSON.stringify(data),generatedAt:firebase.firestore.FieldValue.serverTimestamp()});
   renderTrainingPlan(data,goal);
