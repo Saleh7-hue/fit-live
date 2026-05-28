@@ -1738,8 +1738,7 @@ async function callGemini(prompt, imgB64, imgMime, maxTokens=800) {
   parts.push({text:prompt});
   const body = {
     contents:[{role:'user',parts}],
-    generationConfig:{temperature:0.1,maxOutputTokens:maxTokens},
-    thinkingConfig:{thinkingBudget:0}
+    generationConfig:{temperature:0.1,maxOutputTokens:maxTokens}
   };
   const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+geminiApiKey, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if (!res.ok) { const err=await res.json(); throw new Error(err.error?.message||'HTTP '+res.status); }
